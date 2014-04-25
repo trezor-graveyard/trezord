@@ -1,0 +1,4 @@
+trezord
+=======
+
+TREZOR Communication Daemon
