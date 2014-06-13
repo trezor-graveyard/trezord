@@ -1,6 +1,7 @@
 #include <boost/network/protocol/http/server.hpp>
-#include <string>
 #include <iostream>
+#include <string>
+#include <regex>
 
 namespace api
 {
@@ -12,13 +13,10 @@ namespace api
         operator() (server::request &request,
                     server::response &response)
         {
-            action action_ = dispatch(request);
-
-            if (action_) {
-                action_(this, request, response);
-            } else {
-                response = server::response::stock_reply(server::response::not_found);
-            }
+            action_handler handler;
+            action_params params;
+            dispatch(request, handler, params);
+            handler(this, params, request, response);
         }
 
         void
@@ -29,66 +27,97 @@ namespace api
 
     private:
 
-        typedef std::function<void (handler*, server::request&, server::response&)> action;
-        typedef std::string req_method;
-        typedef std::string req_destination;
+        typedef std::smatch action_params;
+        typedef std::function<void (handler*,
+                                    action_params&,
+                                    server::request&,
+                                    server::response&)> action_handler;
+
         struct action_route
         {
-            req_method method;
-            req_destination destination;
-            action action;
+            std::regex method;
+            std::regex destination;
+            action_handler handler;
+
+            action_route(const std::string &m,
+                         const std::string &d,
+                         const action_handler &h)
+                : method(m),
+                  destination(d),
+                  handler(h) {}
         };
 
-        const action_route action_routes[6] = {
-            { "GET",  "/",          &handler::handle_index },
-            { "GET",  "/devices",   &handler::handle_devices },
-            { "POST", "/configure", &handler::handle_configure },
-            { "POST", "/open",      &handler::handle_open },
-            { "POST", "/call",      &handler::handle_call },
-            { "POST", "/close",     &handler::handle_close }
+        const action_route action_routes[7] = {
+            { "GET",  "/",           &handler::handle_index },
+            { "GET",  "/devices",    &handler::handle_devices },
+            { "POST", "/configure",  &handler::handle_configure },
+            { "POST", "/open/(.*)",  &handler::handle_open },
+            { "POST", "/close/(.*)", &handler::handle_close },
+            { "POST", "/call/(.*)",  &handler::handle_call },
+            { ".*",   ".*",          &handler::handle_404 },
         };
 
-        action
-        dispatch(server::request &request)
+        void
+        dispatch(server::request &request,
+                 action_handler &handler,
+                 action_params &params)
         {
             for (auto route: action_routes) {
-                if (request.method == route.method &&
-                    request.destination == route.destination) {
-                    return route.action;
+                bool m = std::regex_match(request.method,
+                                          route.method);
+                bool d = std::regex_match(request.destination, params,
+                                          route.destination);
+                if (m && d) {
+                    handler = route.handler;
+                    return;
                 }
             }
-            return 0;
+            throw std::invalid_argument("Route not found");
         }
 
         void
-        handle_index(server::request &request,
+        handle_index(action_params &params,
+                     server::request &request,
                      server::response &response)
         {}
 
         void
-        handle_devices(server::request &request,
+        handle_devices(action_params &params,
+                       server::request &request,
                        server::response &response)
         {}
 
         void
-        handle_configure(server::request &request,
-                        server::response &response)
+        handle_configure(action_params &params,
+                         server::request &request,
+                         server::response &response)
         {}
 
         void
-        handle_open(server::request &request,
+        handle_open(action_params &params,
+                    server::request &request,
                     server::response &response)
         {}
 
         void
-        handle_close(server::request &request,
+        handle_close(action_params &params,
+                     server::request &request,
                      server::response &response)
         {}
 
         void
-        handle_call(server::request &request,
+        handle_call(action_params &params,
+                    server::request &request,
                     server::response &response)
         {}
+
+        void
+        handle_404(action_params &params,
+                   server::request &request,
+                   server::response &response)
+        {
+            response = server::response::stock_reply(server::response::not_found);
+        }
     };
 }
 
