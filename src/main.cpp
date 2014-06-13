@@ -1,7 +1,44 @@
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+
 #include <boost/network/protocol/http/server.hpp>
 #include <iostream>
 #include <string>
 #include <regex>
+
+namespace core
+{
+    template <typename Item>
+    struct blocking_queue
+    {
+        void
+        put(const Item &item)
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            queue.push(item);
+            cond_var.notify_one();
+        }
+
+        void
+        take(Item &item)
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            while (queue.empty()) {
+                cond_var.wait(lock);
+            }
+            item = queue.front();
+            queue.pop();
+        }
+
+    private:
+
+        std::mutex mutex;
+        std::condition_variable cond_var;
+        std::queue<Item> queue;
+    };
+}
 
 namespace api
 {
