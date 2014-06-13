@@ -1,5 +1,4 @@
 #include <boost/network/protocol/http/server.hpp>
-#include <boost/thread.hpp>
 #include <string>
 #include <iostream>
 
