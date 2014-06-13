@@ -86,7 +86,7 @@ namespace api
 
         const action_route action_routes[7] = {
             { "GET",  "/",           &handler::handle_index },
-            { "GET",  "/devices",    &handler::handle_devices },
+            { "GET",  "/enumerate",  &handler::handle_enumerate },
             { "POST", "/configure",  &handler::handle_configure },
             { "POST", "/open/(.*)",  &handler::handle_open },
             { "POST", "/close/(.*)", &handler::handle_close },
@@ -100,8 +100,7 @@ namespace api
                  action_params &params)
         {
             for (auto route: action_routes) {
-                bool m = std::regex_match(request.method,
-                                          route.method);
+                bool m = std::regex_match(request.method, route.method);
                 bool d = std::regex_match(request.destination, params,
                                           route.destination);
                 if (m && d) {
@@ -119,9 +118,9 @@ namespace api
         {}
 
         void
-        handle_devices(action_params &params,
-                       server::request &request,
-                       server::response &response)
+        handle_enumerate(action_params &params,
+                         server::request &request,
+                         server::response &response)
         {}
 
         void
