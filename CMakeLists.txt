@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.8)
 
 # trezord project
 project(trezord)
-set(CMAKE_CXX_FLAGS "-std=c++0x")
+set(CMAKE_CXX_FLAGS "-std=c++11")
 include_directories(src)
 add_executable(trezord
   src/main.cpp)
