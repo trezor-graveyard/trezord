@@ -1,0 +1,3 @@
+[submodule "vendor/cpp-netlib"]
+	path = vendor/cpp-netlib
+	url = https://github.com/cpp-netlib/cpp-netlib.git
