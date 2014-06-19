@@ -1,0 +1,13 @@
+This is a simple library to convert between Google protocol buffer objects and JsonCpp objects.
+
+The rudimentary Makefile expects that both protobuf (http://code.google.com/p/protobuf/) and
+JsonCpp (http://jsoncpp.sourceforge.net/) are installed in /usr/local.
+
+The library can then be created with the following command:
+
+$ make
+
+A simple test application can be run with the following command:
+
+$ make test
+
