@@ -364,14 +364,6 @@ private:
         // TODO
     }
 
-    // acquire(device_path):
-    //   device_path -> kernel, ! -> create kernel
-    //   device_path -> executor, ! -> create executor
-    //   executor(
-    //     kernel.open(), ! -> reply(500)
-    //     acquire device_path -> session_id
-    //     reply(200, session_id)
-    //   )
     void
     handle_acquire(action_params const &params,
                    server::request const &request,
@@ -435,19 +427,9 @@ private:
         );
     }
 
-    // call(session_id):
-    //   session_id -> device_path, ! -> reply(404)
-    //   device_path -> kernel, ! -> create kernel
-    //   device_path -> executor, ! -> create executor
-    //   executor(
-    //     json str -> json obj -> pbuf -> wire in, ! -> reply(400)
-    //     kernel.call(wire in) -> wire out, ! -> reply(500)
-    //     wire out -> pbuf -> json obj -> json str
-    //     reply(200, json str)
-    //   )
     void
-    handle_call(const action_params &params,
-                const server::request &request,
+    handle_call(action_params const &params,
+                server::request const &request,
                 server::connection_ptr connection)
     {
         auto session_id = params.str(1);
@@ -489,8 +471,8 @@ private:
     }
 
     void
-    handle_404(const action_params &params,
-               const server::request &request,
+    handle_404(action_params const &params,
+               server::request const &request,
                server::connection_ptr connection)
     {
         connection->set_status(server::connection::not_found);
@@ -505,7 +487,7 @@ private:
         > protobuf_ptr;
 
     void
-    json_to_wire(const Json::Value &json,
+    json_to_wire(Json::Value const &json,
                  wire::message &wire)
     {
         protobuf_ptr pbuf(k.pb_json_codec.typed_json_to_protobuf(json));
@@ -513,7 +495,7 @@ private:
     }
 
     void
-    wire_to_json(const wire::message &wire,
+    wire_to_json(wire::message const &wire,
                  Json::Value &json)
     {
         protobuf_ptr pbuf(k.pb_wire_codec.wire_to_protobuf(wire));
