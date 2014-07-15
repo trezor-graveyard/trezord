@@ -26,8 +26,11 @@ main(int argc, char *argv[])
                                     .port("8000"));
 
         server.run();
+        io_work.reset();
+        io_service->stop();
+        thread_group->join_all();
     }
-    catch (std::exception &e) {
+    catch (std::exception const &e) {
         std::cerr << e.what() << std::endl;
         return 1;
     }

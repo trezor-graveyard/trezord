@@ -94,6 +94,8 @@ struct app_kernel
     typedef std::string session_id_type;
     typedef std::string device_path_type;
 
+    std::mutex mutex;
+
     std::map<
         device_path_type,
         session_id_type
@@ -128,6 +130,7 @@ struct app_kernel
     device_kernel *
     get_device_kernel(device_path_type const &device_path)
     {
+        std::unique_lock<std::mutex> lock(mutex);
         auto kernel_r = device_kernels.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(device_path),
@@ -138,6 +141,7 @@ struct app_kernel
     async_executor *
     get_device_executor(device_path_type const &device_path)
     {
+        std::unique_lock<std::mutex> lock(mutex);
         auto executor_r = device_executors.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(device_path),
@@ -148,6 +152,7 @@ struct app_kernel
     session_id_type
     acquire_session(device_path_type const &device_path)
     {
+        std::unique_lock<std::mutex> lock(mutex);
         auto session_id = generate_session_id();
         sessions[device_path] = session_id;
         return session_id;
@@ -156,6 +161,7 @@ struct app_kernel
     void
     release_session(session_id_type const &session_id)
     {
+        std::unique_lock<std::mutex> lock(mutex);
         auto session_it = find_session_by_id(session_id);
         if (session_it != sessions.end()) {
             sessions.erase(session_it);
@@ -165,6 +171,7 @@ struct app_kernel
     decltype(sessions)::iterator
     find_session_by_id(session_id_type const &session_id)
     {
+        std::unique_lock<std::mutex> lock(mutex);
         return std::find_if(
             sessions.begin(),
             sessions.end(),
@@ -397,7 +404,35 @@ private:
                    server::request const &request,
                    server::connection_ptr connection)
     {
-        // TODO
+        auto session_id = params.str(1);
+
+        auto session_it = k.find_session_by_id(session_id);
+        if (session_it == k.sessions.end()) {
+            connection->set_status(server::connection::not_found);
+            connection->write(json_string({{"error", "session not found"}}));
+            return;
+        }
+        auto &device_path = session_it->first;
+
+        auto kernel = k.get_device_kernel(device_path);
+        auto executor = k.get_device_executor(device_path);
+
+        executor->add(
+            [=] {
+                try {
+                    kernel->close();
+                    k.release_session(session_id);
+                    connection->set_status(server::connection::ok);
+                    connection->set_headers(json_headers);
+                    connection->write(json_string({}));
+                }
+                catch (std::exception const &e) {
+                    connection->set_status(server::connection::internal_server_error);
+                    connection->set_headers(json_headers);
+                    connection->write(json_string({{"error", e.what()}}));
+                }
+            }
+        );
     }
 
     // call(session_id):
@@ -405,9 +440,9 @@ private:
     //   device_path -> kernel, ! -> create kernel
     //   device_path -> executor, ! -> create executor
     //   executor(
-    //     json str -> json obj -> pbuf in -> wire in, ! -> reply(400)
-    //     kernel.call(wire_in) -> wire_out, ! -> reply(500)
-    //     wire_out -> pbuf_out -> json obj -> json str
+    //     json str -> json obj -> pbuf -> wire in, ! -> reply(400)
+    //     kernel.call(wire in) -> wire out, ! -> reply(500)
+    //     wire out -> pbuf -> json obj -> json str
     //     reply(200, json str)
     //   )
     void
