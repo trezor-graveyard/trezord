@@ -7,3 +7,9 @@ mkdir -p lib/cpp-netlib && cd lib/cpp-netlib
 cmake ../../vendor/cpp-netlib
 make
 cd ../..
+
+# Compile jsoncpp
+mkdir -p lib/jsoncpp && cd lib/jsoncpp
+cmake ../../vendor/jsoncpp
+make
+cd ../..
