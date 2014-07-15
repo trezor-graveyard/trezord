@@ -1,0 +1,6 @@
+[Unit]
+Description=TREZOR Bridge
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/trezord

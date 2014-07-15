@@ -11,5 +11,4 @@ include_directories(${LIBUSB_1_INCLUDE_DIRS})
 
 target_link_libraries(hidapi
   ${LIBUSB_1_LIBRARIES}
-  iconv
   rt)

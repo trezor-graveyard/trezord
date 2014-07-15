@@ -19,7 +19,7 @@ add_executable(trezord
   src/protobuf/json_codec.hpp
   src/protobuf/wire_codec.hpp)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_SOURCE_DIR}/cmake/modules"
