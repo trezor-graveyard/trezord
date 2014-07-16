@@ -11,6 +11,7 @@
 #include <boost/uuid/uuid_io.hpp>
 
 #include <thread>
+#include <mutex>
 
 namespace trezord
 {

@@ -13,7 +13,12 @@ RUN yum install -y boost-static libusbx-devel protobuf-devel protobuf-static
 RUN yum install -y boost-static.i686 libusbx-devel.i686
 RUN yum install -y glibc-devel.i686 libgcc.i686 libstdc++.i686 zlib.i686
 
-# install 32bit protobuf packages from Fedora Koji until 32bit build of CentOS is ready
+# install 32bit protobuf package manually until 32bit build of CentOS EPEL is ready
 
-RUN wget https://kojipkgs.fedoraproject.org/packages/protobuf/2.5.0/6.fc21/i686/protobuf-2.5.0-6.fc21.i686.rpm https://kojipkgs.fedoraproject.org/packages/protobuf/2.5.0/6.fc21/i686/protobuf-devel-2.5.0-6.fc21.i686.rpm https://kojipkgs.fedoraproject.org/packages/protobuf/2.5.0/6.fc21/i686/protobuf-static-2.5.0-6.fc21.i686.rpm https://kojipkgs.fedoraproject.org/packages/protobuf/2.5.0/6.fc21/i686/protobuf-compiler-2.5.0-6.fc21.i686.rpm
-RUN rpm -ivh protobuf-2.5.0-6.fc21.i686.rpm protobuf-devel-2.5.0-6.fc21.i686.rpm protobuf-static-2.5.0-6.fc21.i686.rpm protobuf-compiler-2.5.0-6.fc21.i686.rpm
+ADD linux/protobuf-static-2.5.0-6.fc21.i686.tar.xz /
+
+# install dependencies for Windows build
+
+RUN yum install -y mingw32-boost-static mingw64-boost-static
+ADD windows/mingw32-protobuf-devel-2.5.0.tar.xz /
+ADD windows/mingw64-protobuf-devel-2.5.0.tar.xz /
