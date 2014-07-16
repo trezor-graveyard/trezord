@@ -17,7 +17,9 @@ add_executable(trezord
   src/wire.hpp
   src/protobuf/state.hpp
   src/protobuf/json_codec.hpp
-  src/protobuf/wire_codec.hpp)
+  src/protobuf/wire_codec.hpp
+  src/config/config.pb.cc
+  src/config/config.pb.h)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
@@ -25,7 +27,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_SOURCE_DIR}/cmake/modules"
   "${CMAKE_SOURCE_DIR}/lib/cpp-netlib")
 
-find_package(Boost 1.54.0 REQUIRED thread system unit_test_framework)
+SET(Boost_USE_STATIC_LIBS ON)
+find_package(Boost 1.54.0 REQUIRED thread system log unit_test_framework)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(cppnetlib REQUIRED)
 find_package(jsoncpp REQUIRED)
