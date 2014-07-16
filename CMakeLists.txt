@@ -28,7 +28,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_SOURCE_DIR}/lib/cpp-netlib")
 
 SET(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.54.0 REQUIRED thread system log unit_test_framework)
+find_package(Boost 1.54.0 REQUIRED thread system unit_test_framework)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(cppnetlib REQUIRED)
 find_package(jsoncpp REQUIRED)

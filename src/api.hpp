@@ -1,7 +1,5 @@
 #include <boost/network/include/http/server.hpp>
 
-#include <boost/log/trivial.hpp>
-
 #include <functional>
 #include <iostream>
 #include <string>
@@ -41,10 +39,6 @@ struct handler
                      std::size_t size,
                      server::connection_ptr connection_)
                 {
-                    if (error_code.value() > 0) {
-                        BOOST_LOG_TRIVIAL(fatal) << "Read error";
-                    }
-
                     stream.write(input_range.begin(), size);
                     stream_size += size;
 
@@ -67,8 +61,6 @@ struct handler
     operator()(server::request const &request,
                server::connection_ptr connection)
     {
-        BOOST_LOG_TRIVIAL(info) << "Accepted request";
-
         connection_reader *reader = new connection_reader(
             read_content_length(request),
             connection,
