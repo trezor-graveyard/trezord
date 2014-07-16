@@ -44,13 +44,19 @@ include_directories(
   ${JSONCPP_INCLUDE_DIRS}
   vendor/hidapi/hidapi)
 
+if (WIN32)
+  set(OS_LIBRARIES wsock32 ws2_32)
+else(WIN32)
+  set(OS_LIBRARIES pthread)
+endif(WIN32)
+
 target_link_libraries(trezord
   ${Boost_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
   ${CPPNETLIB_LIBRARIES}
   ${JSONCPP_LIBRARIES}
-  hidapi
-  pthread)
+  ${OS_LIBRARIES}
+  hidapi)
 
 if(BUILD_TESTS)
 
