@@ -23,12 +23,14 @@ add_executable(trezord
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
+set(BUILD_SHARED_LIBS off)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_SOURCE_DIR}/cmake/modules"
-  "${CMAKE_SOURCE_DIR}/lib/cpp-netlib")
+  "${CMAKE_BINARY_DIR}/lib/cpp-netlib")
 
-SET(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.54.0 REQUIRED thread system log unit_test_framework)
+set(Boost_USE_STATIC_LIBS on)
+find_package(Boost 1.53.0 REQUIRED thread system log unit_test_framework)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(cppnetlib REQUIRED)
 find_package(jsoncpp REQUIRED)
@@ -47,7 +49,8 @@ target_link_libraries(trezord
   ${PROTOBUF_LIBRARIES}
   ${CPPNETLIB_LIBRARIES}
   ${JSONCPP_LIBRARIES}
-  hidapi)
+  hidapi
+  pthread)
 
 if(BUILD_TESTS)
 

@@ -1,19 +1,19 @@
 # initialize from the image
 
-FROM ubuntu:14.04
+FROM centos:centos7
 
 # update package repositories
 
-RUN apt-get update
-
-# install build tools
-
-RUN apt-get install -y build-essential cmake git pkg-config
+RUN rpm -Uvh http://download.fedoraproject.org/pub/epel/beta/7/x86_64/epel-release-7-0.2.noarch.rpm
+RUN yum install -y cmake gcc gcc-c++ git make pkgconfig wget
 
 # install dependencies for Linux build
 
-RUN apt-get install -y libboost-test1.54-dev libboost-system1.54-dev libboost-regex1.54-dev libboost-date-time1.54-dev libboost-thread1.54-dev libboost-filesystem1.54-dev libboost-program-options1.54-dev libboost-chrono1.54-dev libboost-atomic1.54-dev libprotobuf-dev libssl-dev libusb-1.0-0-dev
+RUN yum install -y boost-static libusbx-devel protobuf-devel protobuf-static
+RUN yum install -y boost-static.i686 libusbx-devel.i686
+RUN yum install -y glibc-devel.i686 libgcc.i686 libstdc++.i686 zlib.i686
 
-# install dependencies for Windows build
+# install 32bit protobuf packages from Fedora Koji until 32bit build of CentOS is ready
 
-RUN apt-get install -y mingw-w64
+RUN wget https://kojipkgs.fedoraproject.org/packages/protobuf/2.5.0/6.fc21/i686/protobuf-2.5.0-6.fc21.i686.rpm https://kojipkgs.fedoraproject.org/packages/protobuf/2.5.0/6.fc21/i686/protobuf-devel-2.5.0-6.fc21.i686.rpm https://kojipkgs.fedoraproject.org/packages/protobuf/2.5.0/6.fc21/i686/protobuf-static-2.5.0-6.fc21.i686.rpm https://kojipkgs.fedoraproject.org/packages/protobuf/2.5.0/6.fc21/i686/protobuf-compiler-2.5.0-6.fc21.i686.rpm
+RUN rpm -ivh protobuf-2.5.0-6.fc21.i686.rpm protobuf-devel-2.5.0-6.fc21.i686.rpm protobuf-static-2.5.0-6.fc21.i686.rpm protobuf-compiler-2.5.0-6.fc21.i686.rpm

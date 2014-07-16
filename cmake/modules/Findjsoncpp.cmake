@@ -5,7 +5,7 @@
 find_path(JSONCPP_INCLUDE_DIR json
   HINTS "${CMAKE_SOURCE_DIR}/vendor/jsoncpp/include")
 find_library(JSONCPP_LIBRARY NAMES json
-  HINTS "${CMAKE_SOURCE_DIR}/lib/jsoncpp/lib")
+  HINTS "${CMAKE_BINARY_DIR}/lib/jsoncpp/lib")
 
 set(JSONCPP_LIBRARIES ${JSONCPP_LIBRARY})
 set(JSONCPP_INCLUDE_DIRS ${JSONCPP_INCLUDE_DIR})
