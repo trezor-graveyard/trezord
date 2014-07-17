@@ -1,4 +1,8 @@
+#ifdef _MSC_VER // trezor-crypto gets compiled as C++ on MSVC
+extern "C++" {
+#else
 extern "C" {
+#endif
 #include <ecdsa.h>
 }
 
