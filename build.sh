@@ -11,6 +11,8 @@ case "$TARGET" in
   lin32 )
     CMAKE_FLAGS="-DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32"
     ;;
+  lin64 )
+    ;;
   win32 )
     TARGET_ARCH=i686-w64-mingw32
     ;;

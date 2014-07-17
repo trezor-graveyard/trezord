@@ -37,12 +37,15 @@ find_package(jsoncpp REQUIRED)
 
 add_subdirectory(vendor/hidapi)
 
+add_subdirectory(vendor/trezor-crypto)
+
 include_directories(
   ${Boost_INCLUDE_DIRS}
   ${PROTOBUF_INCLUDE_DIRS}
   ${CPPNETLIB_INCLUDE_DIRS}
   ${JSONCPP_INCLUDE_DIRS}
-  vendor/hidapi/hidapi)
+  vendor/hidapi/hidapi
+  vendor/trezor-crypto)
 
 if (WIN32)
   set(OS_LIBRARIES wsock32 ws2_32)
@@ -56,7 +59,8 @@ target_link_libraries(trezord
   ${CPPNETLIB_LIBRARIES}
   ${JSONCPP_LIBRARIES}
   ${OS_LIBRARIES}
-  hidapi)
+  hidapi
+  TrezorCrypto)
 
 if(BUILD_TESTS)
 
