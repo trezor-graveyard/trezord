@@ -17,6 +17,9 @@ case "$TARGET" in
   win64 )
     TARGET_ARCH=x86_64-w64-mingw32
     ;;
+  * ) # native build
+    JOBS="-j 4"
+    ;;
 esac
 
 case "$TARGET" in
@@ -30,7 +33,7 @@ esac
 if [ \! -d $BUILDDIR/lib/cpp-netlib ]; then
   mkdir -p $BUILDDIR/lib/cpp-netlib && cd $BUILDDIR/lib/cpp-netlib
   cmake $CMAKE_FLAGS ../../../vendor/cpp-netlib
-  make
+  make $JOBS
   cd ../../..
 fi
 
@@ -38,10 +41,10 @@ fi
 if [ \! -d $BUILDDIR/lib/jsoncpp ]; then
   mkdir -p $BUILDDIR/lib/jsoncpp && cd $BUILDDIR/lib/jsoncpp
   cmake $CMAKE_FLAGS ../../../vendor/jsoncpp
-  make
+  make $JOBS
   cd ../../..
 fi
 
 mkdir -p $BUILDDIR && cd $BUILDDIR
 cmake $CMAKE_FLAGS ..
-make
+make $JOBS
