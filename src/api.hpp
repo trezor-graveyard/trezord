@@ -1,9 +1,9 @@
 #include <boost/network/include/http/server.hpp>
+#include <boost/regex.hpp>
 
 #include <functional>
 #include <iostream>
 #include <string>
-#include <regex>
 #include <map>
 
 namespace trezord
@@ -90,7 +90,7 @@ private:
 
     // dispatching
 
-    typedef std::smatch action_params;
+    typedef boost::smatch action_params;
     typedef std::function<
         void (request_handler*,
               action_params const &,
@@ -100,8 +100,8 @@ private:
 
     struct action_route
     {
-        const std::regex method;
-        const std::regex destination;
+        const boost::regex method;
+        const boost::regex destination;
         const action_handler handler;
 
         action_route(std::string const &m,
@@ -128,9 +128,9 @@ private:
              action_params &params)
     {
         for (auto const &route: action_routes) {
-            bool m = std::regex_match(request.method, route.method);
-            bool d = std::regex_match(request.destination, params,
-                                      route.destination);
+            bool m = boost::regex_match(request.method, route.method);
+            bool d = boost::regex_match(request.destination, params,
+                                        route.destination);
             if (m && d) {
                 handler = route.handler;
                 return;
