@@ -65,13 +65,16 @@ struct device_kernel
     void
     open()
     {
-        auto ptr = new wire::device(device_path);
-        device.reset(ptr);
+        if (device.get() == nullptr) {
+            device.reset(new wire::device(device_path));
+        }
     }
 
     void
     close()
-    { device.reset(); }
+    {
+        device.reset();
+    }
 
     void
     call(wire::message const &msg_in,
@@ -86,11 +89,7 @@ struct device_kernel
 
 private:
 
-    typedef std::unique_ptr<
-        wire::device
-    > wire_device_ptr_type;
-
-    wire_device_ptr_type device;
+    std::unique_ptr< wire::device > device;
 };
 
 struct kernel
