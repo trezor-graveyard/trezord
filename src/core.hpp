@@ -107,7 +107,7 @@ struct kernel
 
     const std::string version = "0.0.1";
 
-    boost::mutex mutex;
+    boost::recursive_mutex mutex;
 
     std::map<
         device_path_type,
@@ -145,21 +145,51 @@ struct kernel
     void
     configure(std::string const &config_str)
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        boost::unique_lock<boost::recursive_mutex> lock(mutex);
         configuration.ParseFromString(config_str);
+        pb_state.build_from_set(configuration.wire_protocol());
+        pb_wire_codec.load_protobuf_state();
     }
 
     bool
     is_configured()
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        boost::unique_lock<boost::recursive_mutex> lock(mutex);
         return configuration.IsInitialized();
+    }
+
+    typedef std::vector<
+        std::pair< device_path_type, session_id_type >
+        > enumeration_type;
+
+    enumeration_type
+    enumerate_devices()
+    {
+        boost::unique_lock<boost::recursive_mutex> lock(mutex);
+
+        auto devices = wire::enumerate_devices(
+            [&] (hid_device_info const *i) {
+                return i->vendor_id == 0x534c && i->product_id == 0x0001;
+            });
+
+        enumeration_type list;
+
+        for (auto const &path: devices) {
+            auto it = sessions.find(path);
+            if (it != sessions.end()) {
+                list.emplace_back(path, it->second);
+            } else {
+                list.emplace_back(path, "");
+            }
+        }
+
+        return list;
     }
 
     device_kernel *
     get_device_kernel(device_path_type const &device_path)
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        boost::unique_lock<boost::recursive_mutex> lock(mutex);
         auto kernel_r = device_kernels.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(device_path),
@@ -170,7 +200,7 @@ struct kernel
     async_executor *
     get_device_executor(device_path_type const &device_path)
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        boost::unique_lock<boost::recursive_mutex> lock(mutex);
         auto executor_r = device_executors.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(device_path),
@@ -181,7 +211,7 @@ struct kernel
     session_id_type
     acquire_session(device_path_type const &device_path)
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        boost::unique_lock<boost::recursive_mutex> lock(mutex);
         auto session_id = generate_session_id();
         sessions[device_path] = session_id;
         return session_id;
@@ -190,7 +220,7 @@ struct kernel
     void
     release_session(session_id_type const &session_id)
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        boost::unique_lock<boost::recursive_mutex> lock(mutex);
         auto session_it = find_session_by_id(session_id);
         if (session_it != sessions.end()) {
             sessions.erase(session_it);
@@ -198,9 +228,9 @@ struct kernel
     }
 
     decltype(sessions)::iterator
-                       find_session_by_id(session_id_type const &session_id)
+    find_session_by_id(session_id_type const &session_id)
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        boost::unique_lock<boost::recursive_mutex> lock(mutex);
         return std::find_if(
             sessions.begin(),
             sessions.end(),
