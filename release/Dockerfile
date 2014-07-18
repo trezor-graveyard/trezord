@@ -9,11 +9,14 @@ RUN yum install -y cmake gcc gcc-c++ git make pkgconfig wget
 
 # install dependencies for Linux build
 
-RUN yum install -y glibc-static libgcc libstdc++-static zlib
+RUN yum install -y glibc-devel glibc-static libgcc libstdc++-static zlib
 RUN yum install -y boost-static libusbx-devel protobuf-devel protobuf-static
 
-RUN yum install -y glibc-static.i686 libgcc.i686 libstdc++-static.i686 zlib.i686
+RUN yum install -y glibc-devel.i686 glibc-static.i686 libgcc.i686 libstdc++-static.i686 zlib.i686
 RUN yum install -y boost-static.i686 libusbx-devel.i686
+
+# remove .so files from protobuf-devel package to pickup static version instead
+RUN rm -f $( rpm -ql protobuf-devel | grep \.so$ )
 
 # install 32bit protobuf package manually until 32bit build of CentOS EPEL is ready
 

@@ -1,2 +1,1 @@
-set(CMAKE_C_FLAGS "-static-libgcc" CACHE STRING "")
-set(CMAKE_CXX_FLAGS "-static-libgcc -static-libstdc++" CACHE STRING "")
+set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++" CACHE STRING "")
