@@ -18,12 +18,12 @@ main(int argc, char *argv[])
         auto thread_pool = make_shared<
             network::utils::thread_pool>(2, io_service, thread_group);
 
-        api::handler handler;
-        api::handler::server::options options(handler);
-        api::handler::server server(options
-                                    .io_service(io_service)
-                                    .address("127.0.0.1")
-                                    .port("8000"));
+        api::connection_handler handler;
+        api::connection_handler::server::options options(handler);
+        api::connection_handler::server server(options
+                           .io_service(io_service)
+                           .address("127.0.0.1")
+                           .port("8000"));
 
         server.run();
         io_work.reset();
