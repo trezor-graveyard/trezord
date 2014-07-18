@@ -107,7 +107,7 @@ private:
             size_type n = min(static_cast<size_type>(rn),
                               static_cast<size_type>(r - 1));
             copy(report.begin() + 1,
-                 report.begin() + n,
+                 report.begin() + 1 + n,
                  back_inserter(read_buffer));
         }
     }
