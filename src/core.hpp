@@ -18,7 +18,7 @@ namespace core
 {
 
 static const char *signature_keys[] = {
-    #include "config/keys.h"
+#include "config/keys.h"
 };
 
 // loosely based on:

@@ -92,11 +92,11 @@ private:
 
     typedef std::smatch action_params;
     typedef std::function<
-    void (request_handler*,
-          action_params const &,
-          request_type const &,
-          connection_ptr_type)
-    > action_handler;
+        void (request_handler*,
+              action_params const &,
+              request_type const &,
+              connection_ptr_type)
+        > action_handler;
 
     struct action_route
     {
@@ -107,9 +107,9 @@ private:
         action_route(std::string const &m,
                      std::string const &d,
                      action_handler const &h)
-        : method(m),
-          destination(d),
-          handler(h) {}
+            : method(m),
+              destination(d),
+              handler(h) {}
     };
 
     const action_route action_routes[7] = {
@@ -354,9 +354,7 @@ private:
 
 template <typename Server, typename Handler>
 struct body_reading_handler
-    : boost::enable_shared_from_this<
-          body_reading_handler<Server, Handler>
-          >
+    : boost::enable_shared_from_this< body_reading_handler<Server, Handler> >
 {
     typedef Server server_type;
     typedef Handler handler_type;
