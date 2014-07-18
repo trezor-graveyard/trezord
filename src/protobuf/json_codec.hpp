@@ -105,14 +105,11 @@ private:
             auto fd = md->field(i);
             auto fname = fd->name();
 
-            if (!ref->HasField(msg, fd)) {
-                continue;
-            }
             try {
                 if (fd->is_repeated()) {
                     val[fname] = serialize_repeated_field(msg, *ref, *fd);
                 }
-                else {
+                else if (ref->HasField(msg, fd)) {
                     val[fname] = serialize_single_field(msg, *ref, *fd);
                 }
             }
