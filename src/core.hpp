@@ -139,7 +139,23 @@ struct kernel
     configure(std::string const &config_str)
     {
         boost::unique_lock<boost::recursive_mutex> lock(mutex);
-        configuration.ParseFromString(config_str);
+
+        if (config_str.size() <= 64) {
+            throw std::invalid_argument("invalid config string");
+        }
+        auto config_sig = (const std::uint8_t *)(config_str.data());
+        auto config_msg = (const std::uint8_t *)(config_str.data()) + 64;
+        auto config_msg_len = config_str.size() - 64;
+
+        auto keys = (const std::uint8_t **)(signature_keys);
+        auto keys_len = sizeof(signature_keys) / sizeof(signature_keys[0]);
+
+        if (!crypto::verify_signature(
+                config_sig, config_msg, config_msg_len, keys, keys_len)) {
+            throw std::invalid_argument("signature verification failed");
+        }
+
+        configuration.ParseFromArray(config_msg, config_msg_len);
         pb_state.build_from_set(configuration.wire_protocol());
         pb_wire_codec.load_protobuf_state();
     }
@@ -161,7 +177,7 @@ struct kernel
         boost::unique_lock<boost::recursive_mutex> lock(mutex);
 
         auto devices = wire::enumerate_devices(
-            [&] (hid_device_info const *i) {
+            [] (hid_device_info const *i) {
                 return i->vendor_id == 0x534c && i->product_id == 0x0001;
             });
 

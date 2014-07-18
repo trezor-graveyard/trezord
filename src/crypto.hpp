@@ -13,14 +13,13 @@ namespace crypto
 
 bool
 verify_signature(const std::uint8_t *sig,
-                 std::size_t siglen,
-                 const std::uint8_t *data,
-                 std::size_t datalen,
-                 const char **keys,
-                 std::size_t keyslen)
+                 const std::uint8_t *msg,
+                 std::size_t msg_len,
+                 const std::uint8_t **keys,
+                 std::size_t keys_len)
 {
-    for (std::size_t i = 0; i < keyslen; i++) {
-        int ret = ecdsa_verify((const std::uint8_t *)keys[i], sig, data, (uint32_t)datalen);
+    for (std::size_t i = 0; i < keys_len; i++) {
+        int ret = ecdsa_verify(keys[i], sig, msg, msg_len);
         if (ret == 0) {
             return true;
         }
