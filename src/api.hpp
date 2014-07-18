@@ -24,7 +24,15 @@ struct request_handler
     request_handler &operator=(request_handler const&) = delete;
 
     request_handler(core::kernel &kernel_)
-        : kernel(kernel_)
+        : kernel(kernel_),
+          action_routes({
+                  { "GET",  "/",             &request_handler::handle_index },
+                  { "GET",  "/enumerate",    &request_handler::handle_enumerate },
+                  { "POST", "/configure",    &request_handler::handle_configure },
+                  { "POST", "/acquire/(.+)", &request_handler::handle_acquire },
+                  { "POST", "/release/(.+)", &request_handler::handle_release },
+                  { "POST", "/call/(.+)",    &request_handler::handle_call },
+                  { ".*",   ".*",            &request_handler::handle_404 }})
     {}
 
     void
@@ -46,8 +54,6 @@ struct request_handler
     }
 
 private:
-
-    core::kernel &kernel;
 
     // json support
 
@@ -112,15 +118,7 @@ private:
               handler(h) {}
     };
 
-    const action_route action_routes[7] = {
-        { "GET",  "/",             &request_handler::handle_index },
-        { "GET",  "/enumerate",    &request_handler::handle_enumerate },
-        { "POST", "/configure",    &request_handler::handle_configure },
-        { "POST", "/acquire/(.+)", &request_handler::handle_acquire },
-        { "POST", "/release/(.+)", &request_handler::handle_release },
-        { "POST", "/call/(.+)",    &request_handler::handle_call },
-        { ".*",   ".*",            &request_handler::handle_404 },
-    };
+    std::vector<action_route> action_routes;
 
     void
     dispatch(request_type const &request,
@@ -140,6 +138,8 @@ private:
     }
 
     // handlers
+
+    core::kernel &kernel;
 
     void
     handle_index(action_params const &params,
