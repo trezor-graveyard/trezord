@@ -6,29 +6,26 @@ int
 main(int argc, char *argv[])
 {
     using namespace trezord;
-    using namespace boost;
 
     try {
-        auto io_service = make_shared<asio::io_service>();
-        auto io_work = make_shared<asio::io_service::work>(ref(*io_service));
+        auto thread_pool = boost::make_shared<
+            boost::network::utils::thread_pool>(2);
 
-        auto thread_group = make_shared<boost::thread_group>();
-        thread_group->create_thread(bind(&asio::io_service::run, io_service));
+        core::kernel kernel;
 
-        auto thread_pool = make_shared<
-            network::utils::thread_pool>(2, io_service, thread_group);
+        api::request_handler<
+            api::connection_handler::server
+            > request_handler(kernel);
 
-        api::connection_handler handler;
-        api::connection_handler::server::options options(handler);
-        api::connection_handler::server server(options
-                           .io_service(io_service)
-                           .address("127.0.0.1")
-                           .port("8000"));
+        api::connection_handler connection_handler(request_handler);
+        api::connection_handler::server::options options(connection_handler);
+        api::connection_handler::server server(
+            options
+            .thread_pool(thread_pool)
+            .address("127.0.0.1")
+            .port("8000"));
 
         server.run();
-        io_work.reset();
-        io_service->stop();
-        thread_group->join_all();
     }
     catch (std::exception const &e) {
         std::cerr << e.what() << std::endl;

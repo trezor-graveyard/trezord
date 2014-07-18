@@ -442,14 +442,11 @@ struct connection_handler
     typedef boost::network::http::async_server<
         connection_handler
         > server;
+
     typedef request_handler<server> handler_type;
 
-    core::kernel kernel;
-    handler_type handler;
-
-    connection_handler()
-        : kernel(),
-          handler(kernel)
+    connection_handler(handler_type &handler_)
+        : handler(handler_)
     {}
 
     void
@@ -461,6 +458,10 @@ struct connection_handler
             >(handler);
         (*br_handler)(request, connection);
     }
+
+private:
+
+    handler_type &handler;
 };
 
 }
