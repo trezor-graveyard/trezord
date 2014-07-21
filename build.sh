@@ -18,6 +18,7 @@ esac
 
 # Compile cpp-netlib
 if [ \! -d $BUILDDIR/lib/cpp-netlib ]; then
+  patch -N vendor/cpp-netlib/CMakeLists.txt vendor/cpp-netlib.patch
   mkdir -p $BUILDDIR/lib/cpp-netlib && cd $BUILDDIR/lib/cpp-netlib
   cmake $PLATFORM_FILE ../../../vendor/cpp-netlib
   make $JOBS

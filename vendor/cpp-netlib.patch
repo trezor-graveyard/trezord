@@ -1,0 +1,28 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 923457c..2f7d971 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -37,7 +37,7 @@ else()
+ endif()
+ 
+ set(Boost_USE_MULTI_THREADED ON)
+-find_package( Boost 1.54.0
++find_package( Boost 1.53.0
+     REQUIRED unit_test_framework system regex date_time thread filesystem
+     program_options chrono atomic )
+ find_package( OpenSSL )
+@@ -80,14 +80,7 @@ if (Boost_FOUND)
+       add_definitions(-D_WIN32_WINNT=0x0501)
+     endif(WIN32)
+     include_directories(${Boost_INCLUDE_DIRS})
+-    enable_testing()
+     add_subdirectory(libs/network/src)
+-    add_subdirectory(libs/network/test)
+-    add_subdirectory(libs/network/experiment)
+-    if (NOT MSVC)
+-      add_subdirectory(libs/mime/test)
+-    endif(NOT MSVC)
+-    add_subdirectory(libs/network/example)
+ endif(Boost_FOUND)
+ 
+ if (MSVC)
