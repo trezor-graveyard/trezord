@@ -150,7 +150,7 @@ private:
         connection->set_headers(json_headers);
         connection->write(json_string({
                     {"configured", kernel.is_configured()},
-                    {"version", kernel.version}
+                    {"version", kernel.get_version()}
                 }));
     }
 
@@ -171,11 +171,7 @@ private:
                      request_type const &request,
                      connection_ptr_type connection)
     {
-        if (!kernel.is_configured()) {
-            throw std::runtime_error("not configured");
-        }
-
-        kernel.enumeration_executor.add(
+        kernel.get_enumeration_executor()->add(
             [=] {
                 try {
                     auto devices = kernel.enumerate_devices();
@@ -208,10 +204,6 @@ private:
                    request_type const &request,
                    connection_ptr_type connection)
     {
-        if (!kernel.is_configured()) {
-            throw std::runtime_error("not configured");
-        }
-
         auto device_path = params.str(1);
 
         auto device = kernel.get_device_kernel(device_path);
@@ -239,23 +231,10 @@ private:
                    request_type const &request,
                    connection_ptr_type connection)
     {
-        if (!kernel.is_configured()) {
-            throw std::runtime_error("not configured");
-        }
-
         auto session_id = params.str(1);
 
-        auto session_it = kernel.find_session_by_id(session_id);
-        if (session_it == kernel.sessions.end()) { // TODO: race condition
-            connection->set_status(connection_type::not_found);
-            connection->set_headers(json_headers);
-            connection->write(json_string({{"error", "session not found"}}));
-            return;
-        }
-        auto &device_path = session_it->first;
-
-        auto device = kernel.get_device_kernel(device_path);
-        auto executor = kernel.get_device_executor(device_path);
+        auto device = kernel.get_device_kernel_by_session_id(session_id);
+        auto executor = kernel.get_device_executor_by_session_id(session_id);
 
         executor->add(
             [=] {
@@ -279,23 +258,10 @@ private:
                 request_type const &request,
                 connection_ptr_type connection)
     {
-        if (!kernel.is_configured()) {
-            throw std::runtime_error("not configured");
-        }
-
         auto session_id = params.str(1);
 
-        auto session_it = kernel.find_session_by_id(session_id);
-        if (session_it == kernel.sessions.end()) { // TODO: race condition
-            connection->set_status(connection_type::not_found);
-            connection->set_headers(json_headers);
-            connection->write(json_string({{"error", "session not found"}}));
-            return;
-        }
-        auto &device_path = session_it->first;
-
-        auto device = kernel.get_device_kernel(device_path);
-        auto executor = kernel.get_device_executor(device_path);
+        auto device = kernel.get_device_kernel_by_session_id(session_id);
+        auto executor = kernel.get_device_executor_by_session_id(session_id);
 
         executor->add(
             [=] {
@@ -307,9 +273,9 @@ private:
                     Json::Reader json_reader;
                     json_reader.parse(request.body, json);
 
-                    json_to_wire(json, wire_in);
+                    kernel.json_to_wire(json, wire_in);
                     device->call(wire_in, wire_out);
-                    wire_to_json(wire_out, json);
+                    kernel.wire_to_json(wire_out, json);
 
                     connection->set_status(connection_type::ok);
                     connection->set_headers(json_headers);
@@ -331,24 +297,6 @@ private:
         connection->set_status(connection_type::not_found);
         connection->set_headers(json_headers);
         connection->write(json_string({}));
-    }
-
-    // helper codec for converting between wire messages and json
-
-    typedef std::unique_ptr< protobuf::pb::Message > protobuf_ptr;
-
-    void
-    json_to_wire(Json::Value const &json, wire::message &wire)
-    {
-        protobuf_ptr pbuf(kernel.pb_json_codec.typed_json_to_protobuf(json));
-        kernel.pb_wire_codec.protobuf_to_wire(*pbuf, wire);
-    }
-
-    void
-    wire_to_json(wire::message const &wire, Json::Value &json)
-    {
-        protobuf_ptr pbuf(kernel.pb_wire_codec.wire_to_protobuf(wire));
-        json = kernel.pb_json_codec.protobuf_to_typed_json(*pbuf);
     }
 };
 

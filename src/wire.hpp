@@ -24,9 +24,14 @@ enumerate_devices(F filter)
 {
     device_path_list list;
     hid_device_info *infos = hid_enumerate(0x00, 0x00);
-    hid_device_info *i;
 
-    for (i = infos; i != nullptr; i = i->next) {
+    for (auto i = infos; i != nullptr; i = i->next) {
+        // skip interfaces known to be foreign
+        // skip "phantom" devices appearing on linux
+        if ((i->interface_number > 0) ||
+            (i->product_string == nullptr)) {
+            continue;
+        }
         if (filter(i)) {
             list.push_back(i->path);
         }
@@ -41,16 +46,24 @@ struct device
     typedef std::uint8_t char_type;
     typedef std::size_t size_type;
 
-    typedef std::runtime_error open_error;
-    typedef std::runtime_error read_error;
-    typedef std::runtime_error write_error;
+    struct open_error
+        : public std::runtime_error
+    { using std::runtime_error::runtime_error; };
+
+    struct read_error
+        : public std::runtime_error
+    { using std::runtime_error::runtime_error; };
+
+    struct write_error
+        : public std::runtime_error
+    { using std::runtime_error::runtime_error; };
 
     device(const device&) = delete;
     device &operator=(const device&) = delete;
 
-    device(const std::string &path)
+    device(char const *path)
     {
-        hid = hid_open_path(path.c_str());
+        hid = hid_open_path(path);
         if (!hid) {
             throw open_error("HID device open failed");
         }
@@ -79,7 +92,7 @@ struct device
     }
 
     void
-    write(const char_type *data,
+    write(char_type const *data,
           size_type len)
     {
         size_type n = write_report(data, len);
@@ -129,7 +142,7 @@ private:
     }
 
     size_type
-    write_report(const char_type *data,
+    write_report(char_type const *data,
                  size_type len)
     {
         using namespace std;
