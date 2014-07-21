@@ -39,6 +39,8 @@ struct request_handler
     operator()(request_type const &request,
                connection_ptr_type connection)
     {
+        LOG(INFO) << request.method << " " << request.destination;
+
         try {
             action_params params;
             action_handler ahandler;
@@ -47,6 +49,7 @@ struct request_handler
             ahandler(this, params, request, connection);
         }
         catch (std::exception const &e) {
+            LOG(ERROR) << e.what();
             connection->set_status(connection_type::internal_server_error);
             connection->set_headers(json_headers);
             connection->write(json_string({{"error", e.what()}}));

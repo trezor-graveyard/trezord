@@ -45,7 +45,8 @@ include_directories(
   ${CPPNETLIB_INCLUDE_DIRS}
   ${JSONCPP_INCLUDE_DIRS}
   vendor/hidapi/hidapi
-  vendor/trezor-crypto)
+  vendor/trezor-crypto
+  vendor/easyloggingpp)
 
 if (WIN32)
   set(OS_LIBRARIES wsock32 ws2_32)
