@@ -5,7 +5,6 @@
 #include <iostream>
 #include <string>
 #include <locale>
-#include <codecvt>
 #include <map>
 
 namespace trezord
@@ -233,9 +232,6 @@ private:
                 try {
                     auto devices = kernel.enumerate_devices();
 
-                    std::wstring_convert<
-                        std::codecvt_utf8<wchar_t>, wchar_t> utf8;
-
                     Json::Value nil;
                     Json::Value item(Json::objectValue);
                     Json::Value list(Json::arrayValue);
@@ -246,8 +242,8 @@ private:
 
                         item["path"] = i.path;
                         item["vendor"] = i.vendor_id;
-                        item["product"] = i.vendor_id;
-                        item["serialNumber"] = utf8.to_bytes(i.serial_number);
+                        item["product"] = i.product_id;
+                        item["serialNumber"] = std::string(i.serial_number.begin(), i.serial_number.end());
                         item["session"] = s.empty() ? nil : s;
                         list.append(item);
                     }
