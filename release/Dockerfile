@@ -20,6 +20,7 @@ RUN rm -f $( rpm -ql protobuf-devel | grep \.so$ )
 
 # install dependencies for Windows build
 
-RUN yum install -y mingw32-boost-static mingw64-boost-static msitools osslsigncode
+RUN yum install -y mingw32-boost-static mingw64-boost-static osslsigncode
 ADD windows/mingw32-protobuf-devel-2.5.0.tar.xz /
 ADD windows/mingw64-protobuf-devel-2.5.0.tar.xz /
+RUN yum install -y mingw32-nsis

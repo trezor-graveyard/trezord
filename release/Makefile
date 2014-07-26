@@ -24,9 +24,11 @@ mac64.pkg: ../build-mac64/trezord
 
 win32.pkg: ../build-win32/trezord.exe
 	$(info Packaging ...)
+	docker run -t -v $(shell pwd)/..:/trezord-src $(IMAGETAG) /bin/bash -c "cd /trezord-src/build-win32; cp ../release/windows/trezord.nsis .; makensis trezord.nsis"
 
 win64.pkg: ../build-win64/trezord.exe
 	$(info Packaging ...)
+	docker run -t -v $(shell pwd)/..:/trezord-src $(IMAGETAG) /bin/bash -c "cd /trezord-src/build-win64; cp ../release/windows/trezord.nsis .; makensis trezord.nsis"
 
 ../build-lin32/trezord: .docker-image
 	$(info Building in docker ...)
