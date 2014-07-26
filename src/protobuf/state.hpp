@@ -26,7 +26,7 @@ struct state
     {}
 
     void
-    build_from_set(pb::FileDescriptorSet const &set)
+    load_from_set(pb::FileDescriptorSet const &set)
     {
         for (int i = 0; i < set.file_size(); i++) {
             descriptor_pool.BuildFile(set.file(i));

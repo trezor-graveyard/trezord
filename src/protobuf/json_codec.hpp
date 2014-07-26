@@ -60,16 +60,16 @@ struct json_codec
     protobuf_to_typed_json(pb::Message const &msg)
     {
         Json::Value val(Json::objectValue);
-        val["name"] = msg.GetDescriptor()->name();
-        val["data"] = protobuf_to_json(msg);
+        val["type"] = msg.GetDescriptor()->name();
+        val["message"] = protobuf_to_json(msg);
         return val;
     }
 
     pb::Message *
     typed_json_to_protobuf(Json::Value const &val)
     {
-        auto name = val["name"];
-        auto data = val["data"];
+        auto name = val["type"];
+        auto data = val["message"];
 
         if (!name.isString()) {
             throw std::invalid_argument("expecting JSON string");

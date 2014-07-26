@@ -4,13 +4,15 @@
 #include "crypto.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/regex.hpp>
+#include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>
+
 #include <boost/asio/io_service.hpp>
+
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-
-#include <boost/thread.hpp>
 
 namespace trezord
 {
@@ -89,113 +91,175 @@ private:
     std::unique_ptr< wire::device > device;
 };
 
+struct kernel_config
+{
+    struct invalid_config
+        : public std::invalid_argument
+    { using std::invalid_argument::invalid_argument; };
+
+    Configuration c;
+
+    void
+    parse_from_signed_string(std::string const &str)
+    {
+        auto data = verify_signature(str);
+        c.ParseFromArray(data.first, data.second);
+    }
+
+    bool
+    is_initialized()
+    {
+        return c.IsInitialized();
+    }
+
+    bool
+    is_unexpired()
+    {
+        std::time_t current_time = std::time(nullptr);
+
+        LOG(DEBUG)
+            << "config valid until: " << c.valid_until() << ", "
+            << "current time: " << current_time << " "
+            << "(delta " << c.valid_until() - current_time << ")";
+
+        return !c.has_valid_until() || c.valid_until() > current_time;
+    }
+
+    bool
+    is_url_allowed(std::string const &url)
+    {
+        bool whitelisted = std::any_of(
+            c.whitelist_urls().begin(),
+            c.whitelist_urls().end(),
+            [&] (std::string const &pattern) {
+                return boost::regex_match(url, boost::regex(pattern));
+            });
+
+        bool blacklisted = std::any_of(
+            c.blacklist_urls().begin(),
+            c.blacklist_urls().end(),
+            [&] (std::string const &pattern) {
+                return boost::regex_match(url, boost::regex(pattern));
+            });
+
+        return whitelisted && !blacklisted;
+    }
+
+private:
+
+    std::pair<std::uint8_t const *, std::size_t>
+    verify_signature(std::string const &str)
+    {
+        static const std::size_t sig_size = 64;
+        if (str.size() <= sig_size) {
+            throw invalid_config("configuration string is malformed");
+        }
+        auto sig = reinterpret_cast<std::uint8_t const *>(str.data());
+        auto msg = sig + sig_size;
+        auto msg_len = str.size() - sig_size;
+
+        static const char *sig_keys[] = {
+#include "config/keys.h"
+        };
+        auto keys = reinterpret_cast<std::uint8_t const **>(sig_keys);
+        auto keys_len = sizeof(sig_keys) / sizeof(sig_keys[0]);
+
+        if (!crypto::verify_signature(sig, msg, msg_len, keys, keys_len)) {
+            throw invalid_config("configuration signature is invalid");
+        }
+
+        return std::make_pair(msg, msg_len);
+    }
+};
+
 struct kernel
 {
     typedef std::string session_id_type;
     typedef std::string device_path_type;
     typedef std::vector<
-        std::pair<device_path_type, session_id_type>
+        std::pair<wire::device_info, session_id_type>
         > device_enumeration_type;
 
-    struct missing_configuration
+    struct missing_config
         : public std::logic_error
     { using std::logic_error::logic_error; };
 
-    struct invalid_configuration
-        : public std::invalid_argument
-    { using std::invalid_argument::invalid_argument; };
-
-    struct invalid_session
+    struct unknown_session
         : public std::invalid_argument
     { using std::invalid_argument::invalid_argument; };
 
 public:
 
     kernel()
-        : sessions(),
-          device_kernels(),
-          device_executors(),
-          enumeration_executor(),
-          pb_state(),
+        : pb_state(),
           pb_wire_codec(pb_state),
           pb_json_codec(pb_state)
     {}
 
     std::string
     get_version()
-    {
-        return "0.0.1";
-    }
+    { return "0.0.1"; }
 
-    // configuration management
+    bool
+    is_configured()
+    { return config.is_initialized(); }
 
     void
-    configure(std::string const &config_str)
+    set_config(kernel_config const &config_)
     {
-        lock_type lock(mutex);
-
-        if (config_str.size() <= 64) {
-            throw invalid_configuration("configuration string is malformed");
-        }
-
-        auto config_sig = (const std::uint8_t *)(config_str.data());
-        auto config_msg = (const std::uint8_t *)(config_str.data()) + 64;
-        auto config_msg_len = config_str.size() - 64;
-
-        static const char *signature_keys[] = {
-            #include "config/keys.h"
-        };
-
-        auto keys = (const std::uint8_t **)(signature_keys);
-        auto keys_len = sizeof(signature_keys) / sizeof(signature_keys[0]);
-
-        if (!crypto::verify_signature(
-                config_sig, config_msg, config_msg_len, keys, keys_len)) {
-            throw invalid_configuration("configuration signature is not correct");
-        }
-
-        configuration.ParseFromArray(config_msg, config_msg_len);
-        pb_state.build_from_set(configuration.wire_protocol());
+        lock_type l(mutex);
+        config = config_;
+        pb_state.load_from_set(config.c.wire_protocol());
         pb_wire_codec.load_protobuf_state();
     }
 
     bool
-    is_configured()
+    is_allowed(std::string const &url)
     {
-        lock_type lock(mutex);
-        return configuration.IsInitialized();
+        lock_type l(mutex);
+        return (!config.is_initialized())
+            || (config.is_unexpired() && config.is_url_allowed(url));
     }
 
     // device enumeration
 
     async_executor *
     get_enumeration_executor()
-    {
-        return &enumeration_executor;
-    }
+    { return &enumeration_executor; }
 
     device_enumeration_type
     enumerate_devices()
     {
-        lock_type lock(mutex);
+        lock_type l(mutex);
 
-        require_configuration();
+        if (!is_configured()) {
+            throw missing_config("not configured");
+        }
 
-        auto devices = wire::enumerate_devices(
-            [] (hid_device_info const *i) {
-                return i->vendor_id == 0x534c && i->product_id == 0x0001;
-            });
+        device_enumeration_type list;
 
-        device_enumeration_type device_list;
-        for (auto const &path: devices) {
-            auto it = sessions.find(path);
+        for (auto const &i: enumerate_supported_devices()) {
+            auto it = sessions.find(i.path);
             if (it != sessions.end()) {
-                device_list.emplace_back(path, it->second);
+                list.emplace_back(i, it->second);
             } else {
-                device_list.emplace_back(path, "");
+                list.emplace_back(i, "");
             }
         }
-        return device_list;
+
+        return list;
+    }
+
+    bool
+    is_path_supported(device_path_type const &device_path)
+    {
+        auto devices = enumerate_devices();
+        return std::any_of(
+            devices.begin(),
+            devices.end(),
+            [&] (decltype(devices)::value_type i) {
+                return i.first.path == device_path;
+            });
     }
 
     // device kernels and executors
@@ -203,9 +267,11 @@ public:
     device_kernel *
     get_device_kernel(device_path_type const &device_path)
     {
-        lock_type lock(mutex);
+        lock_type l(mutex);
 
-        require_configuration();
+        if (!is_configured()) {
+            throw missing_config("not configured");
+        }
 
         auto kernel_r = device_kernels.emplace(
             std::piecewise_construct,
@@ -218,13 +284,21 @@ public:
     device_kernel *
     get_device_kernel_by_session_id(session_id_type const &session_id)
     {
-        lock_type lock(mutex);
+        lock_type l(mutex);
 
-        require_configuration();
+        if (!is_configured()) {
+            throw missing_config("not configured");
+        }
 
-        auto session_it = find_session_by_id(session_id);
+        auto session_it = std::find_if(
+            sessions.begin(),
+            sessions.end(),
+            [&] (decltype(sessions)::value_type const &kv) {
+                return kv.second == session_id;
+            });
+
         if (session_it == sessions.end()) {
-            throw invalid_session("session not found");
+            throw unknown_session("session not found");
         }
 
         return get_device_kernel(session_it->first);
@@ -233,9 +307,11 @@ public:
     async_executor *
     get_device_executor(device_path_type const &device_path)
     {
-        lock_type lock(mutex);
+        lock_type l(mutex);
 
-        require_configuration();
+        if (!is_configured()) {
+            throw missing_config("not configured");
+        }
 
         auto executor_r = device_executors.emplace(
             std::piecewise_construct,
@@ -248,13 +324,21 @@ public:
     async_executor *
     get_device_executor_by_session_id(session_id_type const &session_id)
     {
-        lock_type lock(mutex);
+        lock_type l(mutex);
 
-        require_configuration();
+        if (!is_configured()) {
+            throw missing_config("not configured");
+        }
 
-        auto session_it = find_session_by_id(session_id);
+        auto session_it = std::find_if(
+            sessions.begin(),
+            sessions.end(),
+            [&] (decltype(sessions)::value_type const &kv) {
+                return kv.second == session_id;
+            });
+
         if (session_it == sessions.end()) {
-            throw invalid_session("session not found");
+            throw unknown_session("session not found");
         }
 
         return get_device_executor(session_it->first);
@@ -265,9 +349,11 @@ public:
     session_id_type
     acquire_session(device_path_type const &device_path)
     {
-        lock_type lock(mutex);
+        lock_type l(mutex);
 
-        require_configuration();
+        if (!is_configured()) {
+            throw missing_config("not configured");
+        }
 
         return sessions[device_path] = generate_session_id();
     }
@@ -275,11 +361,19 @@ public:
     void
     release_session(session_id_type const &session_id)
     {
-        lock_type lock(mutex);
+        lock_type l(mutex);
 
-        require_configuration();
+        if (!is_configured()) {
+            throw missing_config("not configured");
+        }
 
-        auto session_it = find_session_by_id(session_id);
+        auto session_it = std::find_if(
+            sessions.begin(),
+            sessions.end(),
+            [&] (decltype(sessions)::value_type const &kv) {
+                return kv.second == session_id;
+            });
+
         if (session_it != sessions.end()) {
             sessions.erase(session_it);
         }
@@ -287,60 +381,64 @@ public:
 
     // protobuf <-> json codec
 
-    typedef std::unique_ptr<protobuf::pb::Message> protobuf_ptr;
-
     void
     json_to_wire(Json::Value const &json, wire::message &wire)
     {
-        protobuf_ptr pbuf(pb_json_codec.typed_json_to_protobuf(json));
+        protobuf_ptr pbuf(
+            pb_json_codec.typed_json_to_protobuf(json));
         pb_wire_codec.protobuf_to_wire(*pbuf, wire);
     }
 
     void
     wire_to_json(wire::message const &wire, Json::Value &json)
     {
-        protobuf_ptr pbuf(pb_wire_codec.wire_to_protobuf(wire));
+        protobuf_ptr pbuf(
+            pb_wire_codec.wire_to_protobuf(wire));
         json = pb_json_codec.protobuf_to_typed_json(*pbuf);
     }
 
 private:
 
+    typedef std::unique_ptr<protobuf::pb::Message> protobuf_ptr;
+    typedef boost::unique_lock<boost::recursive_mutex> lock_type;
+
     boost::recursive_mutex mutex;
-    typedef boost::unique_lock<decltype(mutex)> lock_type;
 
-    std::map<device_path_type, session_id_type> sessions;
-    std::map<device_path_type, device_kernel> device_kernels;
-    std::map<device_path_type, async_executor> device_executors;
-    async_executor enumeration_executor;
-
-    Configuration configuration;
+    kernel_config config;
     protobuf::state pb_state;
     protobuf::wire_codec pb_wire_codec;
     protobuf::json_codec pb_json_codec;
-    boost::uuids::random_generator uuid_generator;
 
-    void
-    require_configuration()
-    {
-        if (!is_configured()) {
-            throw missing_configuration("not configured");
-        }
-    }
+    async_executor enumeration_executor;
+    std::map<device_path_type, async_executor> device_executors;
+    std::map<device_path_type, device_kernel> device_kernels;
+    std::map<device_path_type, session_id_type> sessions;
+    boost::uuids::random_generator uuid_generator;
 
     session_id_type
     generate_session_id()
+    { return boost::lexical_cast<session_id_type>(uuid_generator()); }
+
+    wire::device_info_list
+    enumerate_supported_devices()
     {
-        return boost::lexical_cast<session_id_type>(uuid_generator());
+        return wire::enumerate_connected_devices(
+            [&] (hid_device_info const *i) {
+                return is_device_supported(i);
+            });
     }
 
-    decltype(sessions)::iterator
-    find_session_by_id(session_id_type const &session_id)
+    bool
+    is_device_supported(hid_device_info const *info)
     {
-        return std::find_if(
-            sessions.begin(),
-            sessions.end(),
-            [&] (decltype(sessions)::value_type const &kv) {
-                return kv.second == session_id;
+        return std::any_of(
+            config.c.known_devices().begin(),
+            config.c.known_devices().end(),
+            [&] (DeviceDescriptor const &dd) {
+                return (!dd.has_vendor_id()
+                        || dd.vendor_id() == info->vendor_id)
+                    && (!dd.has_product_id()
+                        || dd.product_id() == info->product_id);
             });
     }
 };

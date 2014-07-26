@@ -16,13 +16,31 @@ namespace trezord
 namespace wire
 {
 
-typedef std::vector<std::string> device_path_list;
-
-template<typename F>
-device_path_list
-enumerate_devices(F filter)
+struct device_info
 {
-    device_path_list list;
+    std::uint16_t vendor_id;
+    std::uint16_t product_id;
+    std::wstring serial_number;
+    std::string path;
+
+    device_info(std::uint16_t vendor_id_,
+                std::uint16_t product_id_,
+                std::wstring const &serial_number_,
+                std::string const &path_)
+        : vendor_id(vendor_id_),
+          product_id(product_id_),
+          serial_number(std::move(serial_number_)),
+          path(std::move(path_))
+    {}
+};
+
+typedef std::vector<device_info> device_info_list;
+
+template <typename F>
+device_info_list
+enumerate_connected_devices(F filter)
+{
+    device_info_list list;
     hid_device_info *infos = hid_enumerate(0x00, 0x00);
 
     for (auto i = infos; i != nullptr; i = i->next) {
@@ -32,9 +50,13 @@ enumerate_devices(F filter)
             (i->product_string == nullptr)) {
             continue;
         }
-        if (filter(i)) {
-            list.push_back(i->path);
+        if (!filter(i)) {
+            continue;
         }
+        list.emplace_back(i->vendor_id,
+                          i->product_id,
+                          i->serial_number,
+                          i->path);
     }
 
     hid_free_enumeration(infos);

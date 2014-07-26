@@ -4,12 +4,63 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include <locale>
+#include <codecvt>
 #include <map>
 
 namespace trezord
 {
 namespace api
 {
+
+// json support
+
+typedef std::pair<std::string, Json::Value> json_pair;
+
+Json::Value
+json_value(std::initializer_list<json_pair> const &il)
+{
+    Json::Value json(Json::objectValue);
+    for (auto const &kv: il) { json[kv.first] = kv.second; }
+    return json;
+}
+
+std::string
+json_string(Json::Value const &json)
+{ return json.toStyledString(); }
+
+std::string
+json_string(std::initializer_list<json_pair> const &il)
+{ return json_string(json_value(il)); }
+
+// gathered response
+
+template <typename Server>
+struct response_data
+{
+    typedef Server server_type;
+
+    typedef typename server_type::connection_ptr connection_ptr_type;
+    typedef typename server_type::response_header header_type;
+    typedef typename server_type::connection::status_t status_type;
+
+    status_type status;
+    std::vector<header_type> headers;
+
+    void
+    set_header(std::string const &name, std::string const &value)
+    { headers.push_back(header_type{name, value}); }
+
+    void
+    write(connection_ptr_type connection, std::string const &body) const
+    {
+        connection->set_status(status);
+        connection->set_headers(headers);
+        connection->write(body);
+    }
+};
+
+// request handler
 
 template <typename Server>
 struct request_handler
@@ -19,6 +70,7 @@ struct request_handler
     typedef typename server_type::request request_type;
     typedef typename server_type::connection connection_type;
     typedef typename server_type::connection_ptr connection_ptr_type;
+    typedef response_data<server_type> response_data_type;
 
     request_handler(request_handler const &) = delete;
     request_handler &operator=(request_handler const&) = delete;
@@ -37,73 +89,34 @@ struct request_handler
 
     void
     operator()(request_type const &request,
+               response_data_type response,
                connection_ptr_type connection)
     {
         LOG(INFO) << request.method << " " << request.destination;
 
+        response.set_header("Content-Type", "application/json");
+
         try {
             action_params params;
             action_handler ahandler;
-
             dispatch(request, ahandler, params);
-            ahandler(this, params, request, connection);
+            ahandler(this, params, request, response, connection);
         }
         catch (std::exception const &e) {
             LOG(ERROR) << e.what();
-            connection->set_status(connection_type::internal_server_error);
-            connection->set_headers(json_headers);
-            connection->write(json_string({{"error", e.what()}}));
+            response.status = connection_type::internal_server_error;
+            response.write(connection, json_string({{"error", e.what()}}));
         }
     }
 
 private:
-
-    // json support
-
-    typedef std::pair<
-        std::string,
-        Json::Value
-        > json_pair;
-
-    typedef std::initializer_list<
-        json_pair
-        > json_list;
-
-    const std::array<
-        typename server_type::response_header, 1
-        > json_headers = {{{"Content-Type", "application/json"}}};
-
-    Json::Value
-    json_value(json_list const &list)
-    {
-        Json::Value json(Json::objectValue);
-
-        for (auto const &kv: list) {
-            json[kv.first] = kv.second;
-        }
-
-        return json;
-    }
-
-    std::string
-    json_string(Json::Value const &json)
-    {
-        return json.toStyledString();
-    }
-
-    std::string
-    json_string(json_list const &list)
-    {
-        return json_string(json_value(list));
-    }
-
-    // dispatching
 
     typedef boost::smatch action_params;
     typedef std::function<
         void (request_handler*,
               action_params const &,
               request_type const &,
+              response_data_type,
               connection_ptr_type)
         > action_handler;
 
@@ -147,57 +160,107 @@ private:
     void
     handle_index(action_params const &params,
                  request_type const &request,
+                 response_data_type response,
                  connection_ptr_type connection)
     {
-        connection->set_status(connection_type::ok);
-        connection->set_headers(json_headers);
-        connection->write(json_string({
-                    {"configured", kernel.is_configured()},
-                    {"version", kernel.get_version()}
-                }));
+        response.status = connection_type::ok;
+        response.write(connection,
+                       json_string({
+                               {"configured", kernel.is_configured()},
+                               {"version", kernel.get_version()}
+                           }));
     }
 
     void
     handle_configure(action_params const &params,
                      request_type const &request,
+                     response_data_type response,
                      connection_ptr_type connection)
     {
-        kernel.configure(request.body);
+        core::kernel_config config;
+        config.parse_from_signed_string(request.body);
 
-        connection->set_status(connection_type::ok);
-        connection->set_headers(json_headers);
-        connection->write(json_string({}));
+        if (!config.is_initialized()) {
+            response.status = connection_type::internal_server_error;
+            response.write(connection,
+                           json_string({
+                                   {"error", "configuration is incomplete"}
+                               }));
+            return;
+        }
+
+        if (!config.is_unexpired()) {
+            response.status = connection_type::internal_server_error;
+            response.write(connection,
+                           json_string({
+                                   {"error", "configuration is expired"}
+                               }));
+            return;
+        }
+
+        auto origin_header_it = std::find_if(
+            request.headers.begin(),
+            request.headers.end(),
+            [&] (typename request_type::header_type const &header) {
+                return header.name == "Origin";
+            });
+        if (origin_header_it != request.headers.end()) {
+            auto &origin = origin_header_it->value;
+            if (!config.is_url_allowed(origin)) {
+                response.status = connection_type::forbidden;
+                response.write(connection,
+                               json_string({
+                                       {"error", "invalid config"}
+                                   }));
+                return;
+            }
+        }
+
+        kernel.set_config(config);
+
+        response.status = connection_type::ok;
+        response.write(connection, json_string({}));
     }
 
     void
     handle_enumerate(action_params const &params,
                      request_type const &request,
+                     response_data_type response,
                      connection_ptr_type connection)
     {
         kernel.get_enumeration_executor()->add(
-            [=] {
+            [=] () mutable {
                 try {
                     auto devices = kernel.enumerate_devices();
 
-                    Json::Value no_session;
+                    std::wstring_convert<
+                        std::codecvt_utf8<wchar_t>, wchar_t> utf8;
+
+                    Json::Value nil;
                     Json::Value item(Json::objectValue);
                     Json::Value list(Json::arrayValue);
 
-                    for (auto const &device: devices) {
-                        item["path"] = device.first;
-                        item["session"] =
-                            device.second.empty() ? no_session : device.second;
+                    for (auto const &d: devices) {
+                        auto const &i = d.first;
+                        auto const &s = d.second;
+
+                        item["path"] = i.path;
+                        item["vendor"] = i.vendor_id;
+                        item["product"] = i.vendor_id;
+                        item["serialNumber"] = utf8.to_bytes(i.serial_number);
+                        item["session"] = s.empty() ? nil : s;
                         list.append(item);
                     }
 
-                    connection->set_status(connection_type::ok);
-                    connection->set_headers(json_headers);
-                    connection->write(json_string(list));
+                    response.status = connection_type::ok;
+                    response.write(connection, json_string(list));
                 }
                 catch (std::exception const &e) {
-                    connection->set_status(connection_type::internal_server_error);
-                    connection->set_headers(json_headers);
-                    connection->write(json_string({{"error", e.what()}}));
+                    response.status = connection_type::internal_server_error;
+                    response.write(connection,
+                                   json_string({
+                                           {"error", e.what()}
+                                       }));
                 }
             });
     }
@@ -205,26 +268,53 @@ private:
     void
     handle_acquire(action_params const &params,
                    request_type const &request,
+                   response_data_type response,
                    connection_ptr_type connection)
     {
         auto device_path = params.str(1);
 
-        auto device = kernel.get_device_kernel(device_path);
-        auto executor = kernel.get_device_executor(device_path);
+        auto acquisition = [=] () mutable {
+            try {
+                auto device = kernel.get_device_kernel(device_path);
+                device->open();
+                auto session_id = kernel.acquire_session(device_path);
 
-        executor->add(
-            [=] {
+                response.status = connection_type::ok;
+                response.write(connection,
+                               json_string({
+                                       {"session", session_id}
+                                   }));
+            }
+            catch (std::exception const &e) {
+                response.status = connection_type::internal_server_error;
+                response.write(connection,
+                               json_string({
+                                       {"error", e.what()}
+                                   }));
+            }
+        };
+
+        kernel.get_enumeration_executor()->add(
+            [=] () mutable {
                 try {
-                    device->open();
-                    auto session_id = kernel.acquire_session(device_path);
-                    connection->set_status(connection_type::ok);
-                    connection->set_headers(json_headers);
-                    connection->write(json_string({{"session", session_id}}));
+                    if (!kernel.is_path_supported(device_path)) {
+                        response.status = connection_type::forbidden;
+                        response.write(
+                            connection,
+                            json_string({
+                                    {"error", "device not found or unsupported"}
+                                }));
+                        return;
+                    }
+
+                    kernel.get_device_executor(device_path)->add(acquisition);
                 }
                 catch (std::exception const &e) {
-                    connection->set_status(connection_type::internal_server_error);
-                    connection->set_headers(json_headers);
-                    connection->write(json_string({{"error", e.what()}}));
+                    response.status = connection_type::internal_server_error;
+                    response.write(connection,
+                                   json_string({
+                                           {"error", e.what()}
+                                       }));
                 }
             });
     }
@@ -232,6 +322,7 @@ private:
     void
     handle_release(action_params const &params,
                    request_type const &request,
+                   response_data_type response,
                    connection_ptr_type connection)
     {
         auto session_id = params.str(1);
@@ -240,18 +331,20 @@ private:
         auto executor = kernel.get_device_executor_by_session_id(session_id);
 
         executor->add(
-            [=] {
+            [=] () mutable {
                 try {
                     device->close();
                     kernel.release_session(session_id);
-                    connection->set_status(connection_type::ok);
-                    connection->set_headers(json_headers);
-                    connection->write(json_string({}));
+
+                    response.status = connection_type::ok;
+                    response.write(connection, json_string({}));
                 }
                 catch (std::exception const &e) {
-                    connection->set_status(connection_type::internal_server_error);
-                    connection->set_headers(json_headers);
-                    connection->write(json_string({{"error", e.what()}}));
+                    response.status = connection_type::internal_server_error;
+                    response.write(connection,
+                                   json_string({
+                                           {"error", e.what()}
+                                       }));
                 }
             });
     }
@@ -259,6 +352,7 @@ private:
     void
     handle_call(action_params const &params,
                 request_type const &request,
+                response_data_type response,
                 connection_ptr_type connection)
     {
         auto session_id = params.str(1);
@@ -267,7 +361,7 @@ private:
         auto executor = kernel.get_device_executor_by_session_id(session_id);
 
         executor->add(
-            [=] {
+            [=] () mutable {
                 try {
                     wire::message wire_in;
                     wire::message wire_out;
@@ -280,14 +374,15 @@ private:
                     device->call(wire_in, wire_out);
                     kernel.wire_to_json(wire_out, json);
 
-                    connection->set_status(connection_type::ok);
-                    connection->set_headers(json_headers);
-                    connection->write(json_string(json));
+                    response.status = connection_type::ok;
+                    response.write(connection, json_string(json));
                 }
                 catch (std::exception const &e) {
-                    connection->set_status(connection_type::internal_server_error);
-                    connection->set_headers(json_headers);
-                    connection->write(json_string({{"error", e.what()}}));
+                    response.status = connection_type::internal_server_error;
+                    response.write(connection,
+                                   json_string({
+                                           {"error", e.what()}
+                                       }));
                 }
             });
     }
@@ -295,17 +390,17 @@ private:
     void
     handle_404(action_params const &params,
                request_type const &request,
+               response_data_type response,
                connection_ptr_type connection)
     {
-        connection->set_status(connection_type::not_found);
-        connection->set_headers(json_headers);
-        connection->write(json_string({}));
+        response.status = connection_type::not_found;
+        response.write(connection, json_string({}));
     }
 };
 
 template <typename Server, typename Handler>
-struct body_reading_handler
-    : boost::enable_shared_from_this< body_reading_handler<Server, Handler> >
+struct body_middleware
+    : boost::enable_shared_from_this< body_middleware<Server, Handler> >
 {
     typedef Server server_type;
     typedef Handler handler_type;
@@ -313,21 +408,24 @@ struct body_reading_handler
     typedef typename server_type::request request_type;
     typedef typename server_type::connection connection_type;
     typedef typename server_type::connection_ptr connection_ptr_type;
+    typedef response_data<server_type> response_data_type;
 
-    body_reading_handler(body_reading_handler const &) = delete;
-    body_reading_handler &operator=(body_reading_handler const&) = delete;
+    body_middleware(body_middleware const &) = delete;
+    body_middleware &operator=(body_middleware const&) = delete;
 
-    body_reading_handler(handler_type &handler_)
+    body_middleware(handler_type &handler_)
         : handler(handler_),
           body()
     {}
 
-    void operator()(request_type const &request,
-                    connection_ptr_type connection)
+    void
+    operator()(request_type const &request,
+               response_data_type response,
+               connection_ptr_type connection)
     {
         body_size = 0;
         body_max_size = read_content_length(request);
-        read_body(request, connection);
+        read_body(request, response, connection);
     }
 
 private:
@@ -339,13 +437,14 @@ private:
 
     void
     read_body(request_type const &request,
+              response_data_type response,
               connection_ptr_type connection)
     {
         connection->read(
             boost::bind(
-                &body_reading_handler<Server, Handler>::handle_body_read,
-                body_reading_handler<Server, Handler>::shared_from_this(),
-                _1, _2, _3, _4, request));
+                &body_middleware<Server, Handler>::handle_body_read,
+                body_middleware<Server, Handler>::shared_from_this(),
+                _1, _2, _3, _4, request, response));
     }
 
     void
@@ -353,16 +452,17 @@ private:
                      boost::system::error_code error,
                      std::size_t size,
                      connection_ptr_type connection,
-                     request_type const &request)
+                     request_type const &request,
+                     response_data_type response)
     {
         body.write(range.begin(), size);
         body_size += size;
 
         if (body_size < body_max_size) {
-            read_body(request, connection);
+            read_body(request, response, connection);
         } else {
             request.body = body.str();
-            handler(request, connection);
+            handler(request, response, connection);
         }
     }
 
@@ -386,6 +486,96 @@ private:
     }
 };
 
+template <typename Server,
+          typename Handler,
+          typename Middleware>
+struct middleware_factory
+{
+    typedef Server server_type;
+    typedef Handler handler_type;
+    typedef Middleware middleware_type;
+
+    typedef typename server_type::request request_type;
+    typedef typename server_type::connection_ptr connection_ptr_type;
+    typedef response_data<server_type> response_data_type;
+
+    middleware_factory(handler_type &handler_)
+        : handler(handler_)
+    {}
+
+    void
+    operator()(request_type const &request,
+               response_data_type response,
+               connection_ptr_type connection)
+    {
+        auto middleware = boost::make_shared<middleware_type>(handler);
+        (*middleware)(request, response, connection);
+    }
+
+private:
+
+    handler_type &handler;
+};
+
+template <typename Server, typename Handler>
+struct cors_middleware
+{
+    typedef Server server_type;
+    typedef Handler handler_type;
+
+    typedef std::function<bool(std::string const &)> origin_validator_type;
+
+    typedef typename server_type::request request_type;
+    typedef typename server_type::connection connection_type;
+    typedef typename server_type::connection_ptr connection_ptr_type;
+    typedef response_data<server_type> response_data_type;
+
+    cors_middleware(handler_type &handler_,
+                    origin_validator_type validator_)
+        : handler(handler_),
+          validator(validator_)
+    {}
+
+    void
+    operator()(request_type const &request,
+               response_data_type response,
+               connection_ptr_type connection)
+    {
+        auto origin_header_it = std::find_if(
+            request.headers.begin(),
+            request.headers.end(),
+            [&] (typename request_type::header_type const &header) {
+                return header.name == "Origin";
+            });
+
+        if (origin_header_it == request.headers.end()) { // non-cors
+            handler(request, response, connection);
+            return;
+        }
+        auto &origin = origin_header_it->value;
+
+        if (!validator(origin)) {
+            response.status = connection_type::forbidden;
+            response.write(connection, "Invalid Origin");
+            return;
+        }
+
+        if (request.method == "OPTIONS") { // pre-flight
+            response.status = connection_type::ok;
+            response.set_header("Access-Control-Allow-Origin", origin);
+            response.write(connection, "");
+            return;
+        }
+
+        handler(request, response, connection);
+    }
+
+private:
+
+    handler_type &handler;
+    origin_validator_type validator;
+};
+
 struct connection_handler
 {
     typedef boost::network::http::async_server<
@@ -393,24 +583,41 @@ struct connection_handler
         > server;
 
     typedef request_handler<server> handler_type;
+    typedef response_data<server> response_data_type;
 
-    connection_handler(handler_type &handler_)
-        : handler(handler_)
+    connection_handler(handler_type &handler)
+        : mw_body(handler),
+          mw_cors(mw_body, [] (std::string const &) {
+                  return true;
+              })
     {}
 
     void
     operator()(server::request const &request,
                server::connection_ptr connection)
     {
-        auto br_handler = boost::make_shared<
-            body_reading_handler<server, handler_type>
-            >(handler);
-        (*br_handler)(request, connection);
+        response_data_type response;
+        mw_cors(request, response, connection);
+    }
+
+    bool
+    is_url_allowed(std::string const &url)
+    {
+        return true;
     }
 
 private:
 
-    handler_type &handler;
+    typedef middleware_factory<
+        server, handler_type, body_middleware<server, handler_type>
+        > body_middleware_type;
+
+    typedef cors_middleware<
+        server, body_middleware_type
+        > cors_middleware_type;
+
+    body_middleware_type mw_body;
+    cors_middleware_type mw_cors;
 };
 
 }
