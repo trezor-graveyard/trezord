@@ -14,3 +14,5 @@ Run `build.sh` to build locally.
 * `make lin64`
 * `make win32`
 * `make win64`
+
+You can also run `make shell` in `release` directory to log into Docker build environment.

@@ -36,7 +36,7 @@ win64.pkg: ../build-win64/trezord.exe
 	$(info Building in docker ...)
 	docker run -t -v $(shell pwd)/..:/trezord-src $(IMAGETAG) /trezord-src/build.sh lin64
 
-../build-mac64/trezord: .docker-image
+../build-mac64/trezord:
 	$(error You need to compile OS X version manually and put it to ../build-mac64/trezord. Sorry :/)
 
 ../build-win32/trezord.exe: .docker-image
@@ -46,6 +46,9 @@ win64.pkg: ../build-win64/trezord.exe
 ../build-win64/trezord.exe: .docker-image
 	$(info Building in docker ...)
 	docker run -t -v $(shell pwd)/..:/trezord-src $(IMAGETAG) /trezord-src/build.sh win64
+
+shell: .docker-image
+	docker run -i -t -v $(shell pwd)/..:/trezord-src $(IMAGETAG) /bin/bash
 
 .docker-image:
 	$(info Preparing docker image ...)
