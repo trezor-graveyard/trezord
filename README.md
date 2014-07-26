@@ -3,12 +3,14 @@ trezord
 
 TREZOR Communication Daemon
 
-Usage
------
+Building
+--------
 
-Requires installed Boost 1.50+.
+Run `build.sh` to build locally.
 
-    ./bootstrap.sh
-    ./build.sh
+... or change into `release` directory and run one of the following (requires Docker):
 
-    build/trezord
+* `make lin32`
+* `make lin64`
+* `make win32`
+* `make win64`
