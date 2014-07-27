@@ -74,6 +74,10 @@ private:
             try {
                 if (fd->is_repeated()) {
                     val[fname] = serialize_repeated_field(msg, *ref, *fd);
+                    // no empty arrays for repeated fields
+                    if (val[fname].empty()) {
+                        val.removeMember(fname);
+                    }
                 }
                 else if (ref->HasField(msg, fd)) {
                     val[fname] = serialize_single_field(msg, *ref, *fd);

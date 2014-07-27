@@ -33,5 +33,8 @@ if [ \! -d $BUILDDIR/lib/jsoncpp ]; then
 fi
 
 mkdir -p $BUILDDIR && cd $BUILDDIR
-cmake $PLATFORM_FILE ..
+cmake $PLATFORM_FILE \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DBUILD_TESTS=on \
+      ..
 make $JOBS
