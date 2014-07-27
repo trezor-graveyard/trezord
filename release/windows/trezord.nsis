@@ -1,6 +1,6 @@
 Name "TREZOR Bridge"
 InstallDir "$ProgramFiles\TREZOR Bridge"
-InstallDirRegKey HKLM "SOFTWARE\TREZOR Bridge" "Install_Dir"
+InstallDirRegKey HKLM Software\TREZOR\Bridge InstallDir
 
 ShowInstDetails hide
 ShowUninstDetails hide
@@ -17,28 +17,24 @@ DirText "Please select the installation folder."
 Section "TREZOR Bridge"
   SectionIn RO
 
-  SetOutPath "$INSTDIR\."
+  SetOutPath "$INSTDIR"
   File "trezord.exe"
 SectionEnd
 
 Section "Start Menu Shortcuts"
   CreateDirectory "$SMPROGRAMS\TREZOR Bridge"
   CreateShortCut "$SMPROGRAMS\TREZOR Bridge\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\TREZOR Bridge\TREZOR Bridge.lnk" "$INSTDIR\.\trezord.exe" "" "$INSTDIR\.\trezord.exe" 0
-SectionEnd
-
-Section "Desktop Icons"
-  CreateShortCut "$DESKTOP\TREZOR Bridge.lnk" "$INSTDIR\.\trezord.exe" "" "$INSTDIR\.\trezord.exe" 0
+  CreateShortCut "$SMPROGRAMS\TREZOR Bridge\TREZOR Bridge.lnk" "$INSTDIR\trezord.exe" "" "$INSTDIR\trezord.exe" 0
+  CreateShortCut "$SMSTARTUP\TREZOR Bridge.lnk" "$INSTDIR\trezord.exe" "" "$INSTDIR\trezord.exe" 0
 SectionEnd
 
 Section "Uninstall"
-  Delete /rebootok "$DESKTOP\trezord.exe.lnk"
+  Delete /rebootok "$SMSTARTUP\TREZOR Bridge.lnk"
   Delete /rebootok "$SMPROGRAMS\TREZOR Bridge\TREZOR Bridge.lnk"
   Delete /rebootok "$SMPROGRAMS\TREZOR Bridge\Uninstall.lnk"
   RMDir "$SMPROGRAMS\TREZOR Bridge"
 
-  Delete /rebootok "$INSTDIR\.\trezord.exe"
-  RMDir "$INSTDIR\."
+  Delete /rebootok "$INSTDIR\trezord.exe"
   RMDir "$INSTDIR"
 SectionEnd
 
