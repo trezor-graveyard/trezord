@@ -6,10 +6,10 @@ import json
 
 def parse_line(line):
     cols = line.split('\t')
-    msg = {'wire': {'id': cols[0].strip(),
-                    'data': cols[4].strip()},
-           'parsed': {'name': cols[1].strip(),
-                      'data': json.loads(cols[3].strip())}}
+    msg = {'wire': {'type': cols[0].strip(),
+                    'message': cols[4].strip()},
+           'parsed': {'type': cols[1].strip(),
+                      'message': json.loads(cols[3].strip())}}
     return msg
 
 
@@ -21,8 +21,8 @@ def dump_str(s):
 
 
 def dump_wire(wire):
-    id = wire['id']
-    data = wire['data']
+    id = wire['type']
+    data = wire['message']
     data = data.decode('hex')
     code = '{%s, std::string("%s", %s)}' % (id, dump_str(data), len(data))
     return code

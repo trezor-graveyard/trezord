@@ -1,3 +1,6 @@
+#include <easylogging++.h>
+
+#include "utils.hpp"
 #include "wire.hpp"
 
 #include "protobuf/state.hpp"
@@ -9,10 +12,11 @@
 #include <algorithm>
 #include <fstream>
 
-#define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE ProtobufCodecs
 
 #include <boost/test/unit_test.hpp>
+
+_INITIALIZE_EASYLOGGINGPP
 
 using namespace trezord;
 
@@ -37,7 +41,7 @@ struct loaded_state_fixture
         BOOST_CHECK(descriptor_set.file_size() > 0);
 
         // initialize the protobuf state
-        protobuf_state.build_from_set(descriptor_set);
+        protobuf_state.load_from_set(descriptor_set);
     }
 };
 
@@ -45,8 +49,8 @@ BOOST_FIXTURE_TEST_CASE(wire_codec_with_empty_state_fails,
                         empty_state_fixture)
 {
     // fails because of missing MessageType enum
-    BOOST_CHECK_THROW(protobuf::wire_codec wc(protobuf_state),
-                      std::invalid_argument);
+    protobuf::wire_codec wc(protobuf_state);
+    BOOST_CHECK_THROW(wc.load_protobuf_state(), std::invalid_argument);
 }
 
 BOOST_FIXTURE_TEST_CASE(json_to_wire_conversion,
@@ -112,6 +116,8 @@ BOOST_FIXTURE_TEST_CASE(wire_to_json_conversion,
         Json::Reader reader;
         reader.parse(expected_json_str, expected_json);
 
-        BOOST_REQUIRE_EQUAL(json, expected_json);
+        BOOST_REQUIRE_EQUAL(
+            json.toStyledString(),
+            expected_json.toStyledString());
     }
 }
