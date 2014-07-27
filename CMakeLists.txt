@@ -10,7 +10,7 @@ option(BUILD_TESTS "Build tests?" off)
 
 include_directories(src)
 
-add_executable(trezord
+set (SRCS
   src/main.cpp
   src/api.hpp
   src/core.hpp
@@ -20,6 +20,12 @@ add_executable(trezord
   src/protobuf/wire_codec.hpp
   src/config/config.pb.cc
   src/config/config.pb.h)
+
+if (WIN32)
+  set (SRCS src/trezord.rc ${SRCS})
+endif(WIN32)
+
+add_executable(trezord ${SRCS})
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 

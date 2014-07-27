@@ -1,5 +1,4 @@
 Name "TREZOR Bridge"
-OutFile "trezor-bridge-installer.exe"
 InstallDir "$ProgramFiles\TREZOR Bridge"
 InstallDirRegKey HKLM "SOFTWARE\TREZOR Bridge" "Install_Dir"
 
@@ -10,11 +9,8 @@ SetCompressor bzip2
 
 XPStyle on
 
-Page components
 Page directory
 Page instfiles
-
-ComponentText "Select which optional components you want to install."
 
 DirText "Please select the installation folder."
 
