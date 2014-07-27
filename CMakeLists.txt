@@ -73,8 +73,7 @@ if(BUILD_TESTS)
   target_link_libraries(test-protobuf_codecs
     ${Boost_LIBRARIES}
     ${PROTOBUF_LIBRARIES}
-    ${JSONCPP_LIBRARIES}
-    hidapi)
+    ${JSONCPP_LIBRARIES})
 
   enable_testing()
   add_test(ProtobufCodecs test-protobuf_codecs)
