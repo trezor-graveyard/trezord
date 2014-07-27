@@ -169,7 +169,7 @@ private:
     {
         using namespace std;
 
-        report_type report(0);
+        report_type report;
         report.fill(0x00);
         report[0] = report.size() - 1;
 
