@@ -1,5 +1,6 @@
 #include <easylogging++.h>
 
+#include "utils.hpp"
 #include "wire.hpp"
 #include "core.hpp"
 #include "api.hpp"

@@ -15,6 +15,7 @@ add_executable(trezord
   src/api.hpp
   src/core.hpp
   src/wire.hpp
+  src/utils.hpp
   src/protobuf/state.hpp
   src/protobuf/json_codec.hpp
   src/protobuf/wire_codec.hpp

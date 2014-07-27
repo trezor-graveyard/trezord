@@ -2,11 +2,7 @@
 
 #include "protobuf/state.hpp"
 
-#include <sstream>
 #include <stdexcept>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/hex.hpp>
 
 #include <json/json.h>
 
@@ -19,36 +15,6 @@ namespace protobuf
 {
 
 namespace pb = google::protobuf;
-
-std::string
-hex_encode(std::string const &str)
-{
-    try {
-        std::ostringstream stream;
-        std::ostream_iterator<char> iterator(stream);
-        boost::algorithm::hex(str, iterator);
-        std::string hex(stream.str());
-        boost::algorithm::to_lower(hex);
-        return hex;
-    }
-    catch (std::exception const &e) {
-        throw std::invalid_argument("cannot encode value to hex");
-    }
-}
-
-std::string
-hex_decode(std::string const &hex)
-{
-    try {
-        std::ostringstream stream;
-        std::ostream_iterator<char> iterator(stream);
-        boost::algorithm::unhex(hex, iterator);
-        return stream.str();
-    }
-    catch (const std::exception &e) {
-        throw std::invalid_argument("cannot decode value from hex");
-    }
-}
 
 struct json_codec
 {
@@ -198,7 +164,7 @@ private:
             return ref.GetString(msg, &fd);
 
         case pb::FieldDescriptor::TYPE_BYTES:
-            return hex_encode(ref.GetString(msg, &fd));
+            return utils::hex_encode(ref.GetString(msg, &fd));
 
         case pb::FieldDescriptor::TYPE_ENUM:
             return ref.GetEnum(msg, &fd)->name();
@@ -266,7 +232,7 @@ private:
             return ref.GetRepeatedString(msg, &fd, i);
 
         case pb::FieldDescriptor::TYPE_BYTES:
-            return hex_encode(ref.GetRepeatedString(msg, &fd, i));
+            return utils::hex_encode(ref.GetRepeatedString(msg, &fd, i));
 
         case pb::FieldDescriptor::TYPE_ENUM:
             return ref.GetRepeatedEnum(msg, &fd, i)->name();
@@ -326,7 +292,7 @@ private:
             break;
 
         case pb::FieldDescriptor::TYPE_BYTES:
-            ref.SetString(&msg, &fd, hex_decode(val.asString()));
+            ref.SetString(&msg, &fd, utils::hex_decode(val.asString()));
             break;
 
         case pb::FieldDescriptor::TYPE_ENUM: {
@@ -412,7 +378,7 @@ private:
             break;
 
         case pb::FieldDescriptor::TYPE_BYTES:
-            ref.AddString(&msg, &fd, hex_decode(val.asString()));
+            ref.AddString(&msg, &fd, utils::hex_decode(val.asString()));
             break;
 
         case pb::FieldDescriptor::TYPE_ENUM: {

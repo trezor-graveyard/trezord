@@ -177,7 +177,8 @@ private:
                      connection_ptr_type connection)
     {
         core::kernel_config config;
-        config.parse_from_signed_string(request.body);
+        config.parse_from_signed_string(
+            utils::hex_decode(request.body));
 
         if (!config.is_initialized()) {
             response.status = connection_type::internal_server_error;
