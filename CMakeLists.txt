@@ -15,6 +15,7 @@ set (SRCS
   src/api.hpp
   src/core.hpp
   src/wire.hpp
+  src/utils.hpp
   src/protobuf/state.hpp
   src/protobuf/json_codec.hpp
   src/protobuf/wire_codec.hpp
@@ -78,8 +79,7 @@ if(BUILD_TESTS)
   target_link_libraries(test-protobuf_codecs
     ${Boost_LIBRARIES}
     ${PROTOBUF_LIBRARIES}
-    ${JSONCPP_LIBRARIES}
-    hidapi)
+    ${JSONCPP_LIBRARIES})
 
   enable_testing()
   add_test(ProtobufCodecs test-protobuf_codecs)

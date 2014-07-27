@@ -104,6 +104,12 @@ struct kernel_config
     {
         auto data = verify_signature(str);
         c.ParseFromArray(data.first, data.second);
+
+        std::time_t current_time = std::time(nullptr);
+        LOG(DEBUG)
+            << "config valid until: " << c.valid_until() << ", "
+            << "current time: " << current_time << " "
+            << "(delta " << c.valid_until() - current_time << ")";
     }
 
     bool
@@ -116,12 +122,6 @@ struct kernel_config
     is_unexpired()
     {
         std::time_t current_time = std::time(nullptr);
-
-        LOG(DEBUG)
-            << "config valid until: " << c.valid_until() << ", "
-            << "current time: " << current_time << " "
-            << "(delta " << c.valid_until() - current_time << ")";
-
         return !c.has_valid_until() || c.valid_until() > current_time;
     }
 

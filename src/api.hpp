@@ -177,7 +177,8 @@ private:
                      connection_ptr_type connection)
     {
         core::kernel_config config;
-        config.parse_from_signed_string(request.body);
+        config.parse_from_signed_string(
+            utils::hex_decode(request.body));
 
         if (!config.is_initialized()) {
             response.status = connection_type::internal_server_error;
@@ -206,6 +207,9 @@ private:
         if (origin_header_it != request.headers.end()) {
             auto &origin = origin_header_it->value;
             if (!config.is_url_allowed(origin)) {
+                LOG(WARNING)
+                    << "configure call from invalid origin: "
+                    << origin;
                 response.status = connection_type::forbidden;
                 response.write(connection,
                                json_string({
@@ -243,7 +247,9 @@ private:
                         item["path"] = i.path;
                         item["vendor"] = i.vendor_id;
                         item["product"] = i.product_id;
-                        item["serialNumber"] = std::string(i.serial_number.begin(), i.serial_number.end());
+                        item["serialNumber"] = std::string(
+                            i.serial_number.begin(),
+                            i.serial_number.end());
                         item["session"] = s.empty() ? nil : s;
                         list.append(item);
                     }
@@ -551,18 +557,22 @@ struct cors_middleware
         auto &origin = origin_header_it->value;
 
         if (!validator(origin)) {
+            LOG(WARNING)
+                << "invalid origin encountered: " << origin;
             response.status = connection_type::forbidden;
             response.write(connection, "Invalid Origin");
             return;
         }
 
         if (request.method == "OPTIONS") { // pre-flight
+            LOG(INFO) << "pre-flight request accepted";
             response.status = connection_type::ok;
             response.set_header("Access-Control-Allow-Origin", origin);
             response.write(connection, "");
             return;
         }
 
+        LOG(INFO) << "request accepted";
         handler(request, response, connection);
     }
 
