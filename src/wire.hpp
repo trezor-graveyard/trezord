@@ -169,8 +169,9 @@ private:
     {
         using namespace std;
 
-        report_type report;
-        report[0] = report.size() - 1; // rest is 0x00
+        report_type report(0);
+        report.fill(0x00);
+        report[0] = report.size() - 1;
 
         size_type n = min(report.size() - 1, len);
         copy(data, data + n, report.begin() + 1); // copy behind report number
