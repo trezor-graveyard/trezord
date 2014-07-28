@@ -30,6 +30,7 @@ main(int argc, char *argv[])
         api::connection_handler::server server(
             options
             .thread_pool(thread_pool)
+            .reuse_address(true)
             .address("127.0.0.1")
             .port("21324"));
 
