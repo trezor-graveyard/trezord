@@ -1,3 +1,5 @@
+#define _ELPP_DEFAULT_LOG_FILE "logs/trezord.log"
+
 #include <easylogging++.h>
 
 #include "utils.hpp"
