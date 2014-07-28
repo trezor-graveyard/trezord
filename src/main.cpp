@@ -15,6 +15,8 @@ main(int argc, char *argv[])
     using namespace trezord;
 
     try {
+        _START_EASYLOGGINGPP(argc, argv);
+
         core::kernel kernel;
 
         api::request_handler<
