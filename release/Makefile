@@ -15,9 +15,11 @@ win64: win64.pkg
 
 lin32.pkg: ../build-lin32/trezord
 	$(info Packaging ...)
+	docker run -t -v $(shell pwd)/..:/trezord-src $(IMAGETAG) /trezord-src/release/linux/release.sh lin32
 
 lin64.pkg: ../build-lin64/trezord
 	$(info Packaging ...)
+	docker run -t -v $(shell pwd)/..:/trezord-src $(IMAGETAG) /trezord-src/release/linux/release.sh lin64
 
 mac64.pkg: ../build-mac64/trezord
 	$(info Packaging ...)

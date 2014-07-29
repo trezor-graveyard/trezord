@@ -18,9 +18,17 @@ RUN yum install -y boost-static.i686 libusbx-devel.i686 protobuf-static.i686
 RUN yum install -y protobuf-devel
 RUN rm -f $( rpm -ql protobuf-devel | grep \.so$ )
 
+# install dependencies for Linux packaging
+
+RUN yum install -y ruby-devel rubygems rpm-build
+RUN gem install fpm
+
 # install dependencies for Windows build
 
-RUN yum install -y mingw32-boost-static mingw64-boost-static osslsigncode
+RUN yum install -y mingw32-boost-static mingw64-boost-static
 ADD windows/mingw32-protobuf-devel-2.5.0.tar.xz /
 ADD windows/mingw64-protobuf-devel-2.5.0.tar.xz /
-RUN yum install -y mingw32-nsis
+
+# install dependencies for Windows packaging
+
+RUN yum install -y osslsigncode mingw32-nsis

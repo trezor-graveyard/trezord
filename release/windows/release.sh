@@ -5,8 +5,10 @@ set -e
 cd $(dirname $0)
 
 TARGET=$1
-INSTALLER=trezor-bridge-$TARGET-install.exe
 BUILDDIR=build${TARGET:+-$TARGET}
+VERSION=$(cat ../../VERSION)
+
+INSTALLER=trezor-bridge-$VERSION-$TARGET-install.exe
 
 cp trezord.nsis ../../$BUILDDIR
 cd ../../$BUILDDIR

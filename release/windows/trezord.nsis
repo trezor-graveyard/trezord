@@ -1,11 +1,22 @@
+SetCompressor bzip2
+
+InstallDir ""
+!include LogicLib.nsh
+!include x64.nsh
+
+Function .onInit
+${If} ${RunningX64}
+  StrCpy $InstDir "$ProgramFiles64\TREZOR Bridge"
+${Else}
+  StrCpy $InstDir "$ProgramFiles\TREZOR Bridge"
+${EndIf}
+FunctionEnd
+
 Name "TREZOR Bridge"
-InstallDir "$ProgramFiles\TREZOR Bridge"
 InstallDirRegKey HKLM Software\TREZOR\Bridge InstallDir
 
 ShowInstDetails hide
 ShowUninstDetails hide
-
-SetCompressor bzip2
 
 XPStyle on
 

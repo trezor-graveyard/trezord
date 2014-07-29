@@ -1,3 +1,0 @@
-trezord         /usr/bin/trezord
-trezor.rules    /usr/lib/udev/rules.d/51-trezor.rules
-trezord.service /usr/lib/systemd/system/trezord.service
