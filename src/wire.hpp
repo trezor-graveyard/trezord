@@ -6,6 +6,8 @@
 #include <netinet/in.h>
 #endif
 
+#include <boost/thread.hpp>
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -15,6 +17,11 @@ namespace trezord
 {
 namespace wire
 {
+
+// Mutex used to tip-toe around various hidapi bugs, mostly on
+// linux. Enumerate acquires an exclusive lock, while
+// open/close/read/write use shared locks.
+static boost::shared_mutex hid_mutex;
 
 struct device_info
 {
@@ -40,6 +47,8 @@ template <typename F>
 device_info_list
 enumerate_connected_devices(F filter)
 {
+    boost::unique_lock<boost::shared_mutex> l(hid_mutex);
+
     CLOG(INFO, "wire.enumerate") << "enumerating";
 
     device_info_list list;
@@ -88,6 +97,8 @@ struct device
 
     device(char const *path)
     {
+        boost::shared_lock<boost::shared_mutex> l(hid_mutex);
+
         hid = hid_open_path(path);
         if (!hid) {
             throw open_error("HID device open failed");
@@ -133,6 +144,8 @@ private:
     {
         using namespace std;
 
+        boost::shared_lock<boost::shared_mutex> l(hid_mutex);
+
         report_type report;
         int r = hid_read(hid, report.data(), report.size());
 
@@ -171,6 +184,8 @@ private:
                  size_type len)
     {
         using namespace std;
+
+        boost::shared_lock<boost::shared_mutex> l(hid_mutex);
 
         report_type report;
         report.fill(0x00);
