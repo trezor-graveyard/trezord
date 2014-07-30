@@ -21,13 +21,13 @@ RUN rm -f $( rpm -ql protobuf-devel | grep \.so$ )
 # install dependencies for Linux packaging
 
 RUN yum install -y ruby-devel rubygems rpm-build
-RUN gem install fpm
+RUN gem install fpm --no-document
 
 # install dependencies for Windows build
 
 RUN yum install -y mingw32-boost-static mingw64-boost-static
-ADD windows/mingw32-protobuf-devel-2.5.0.tar.xz /
-ADD windows/mingw64-protobuf-devel-2.5.0.tar.xz /
+ADD windows/mingw32-protobuf-2.5.0.tar.xz /
+ADD windows/mingw64-protobuf-2.5.0.tar.xz /
 
 # install dependencies for Windows packaging
 
