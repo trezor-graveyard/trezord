@@ -40,6 +40,8 @@ template <typename F>
 device_info_list
 enumerate_connected_devices(F filter)
 {
+    CLOG(INFO, "wire.enumerate") << "enumerating";
+
     device_info_list list;
     hid_device_info *infos = hid_enumerate(0x00, 0x00);
 
@@ -48,6 +50,7 @@ enumerate_connected_devices(F filter)
         // skip "phantom" devices appearing on linux
         if ((i->interface_number > 0) ||
             (i->product_string == nullptr)) {
+            CLOG(DEBUG, "wire.enumerate") << "skipping, invalid device";
             continue;
         }
         if (!filter(i)) {

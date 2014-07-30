@@ -39,7 +39,9 @@ struct async_executor
 
     void
     add(std::function<void()> const &closure)
-    { io_service.post(closure); }
+    {
+        io_service.post(closure);
+    }
 
 private:
 
@@ -64,6 +66,7 @@ struct device_kernel
     open()
     {
         if (device.get() == nullptr) {
+            CLOG(INFO, "core.device") << "opening: " << device_path;
             auto ptr = new wire::device(device_path.c_str());
             device.reset(ptr);
         }
@@ -72,6 +75,7 @@ struct device_kernel
     void
     close()
     {
+        CLOG(INFO, "core.device") << "closing: " << device_path;
         device.reset();
     }
 
@@ -79,6 +83,7 @@ struct device_kernel
     call(wire::message const &msg_in,
          wire::message &msg_out)
     {
+        CLOG(INFO, "core.device") << "calling: " << device_path;
         if (!device.get()) {
             open();
         }
@@ -109,6 +114,8 @@ struct kernel_config
     void
     parse_from_signed_string(std::string const &str)
     {
+        CLOG(INFO, "core.config") << "parsing config";
+
         auto data = verify_signature(str);
         c.ParseFromArray(data.first, data.second);
 
@@ -362,6 +369,7 @@ public:
             throw missing_config("not configured");
         }
 
+        CLOG(INFO, "core.kernel") << "acquiring session for: " << device_path;
         return sessions[device_path] = generate_session_id();
     }
 
@@ -382,6 +390,7 @@ public:
             });
 
         if (session_it != sessions.end()) {
+            CLOG(INFO, "core.kernel") << "releasing session: " << session_id;
             sessions.erase(session_it);
         }
     }
