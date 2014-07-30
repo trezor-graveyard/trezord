@@ -82,8 +82,15 @@ struct device_kernel
         if (!device.get()) {
             open();
         }
-        msg_in.write_to(*device);
-        msg_out.read_from(*device);
+        try {
+            msg_in.write_to(*device);
+            msg_out.read_from(*device);
+        }
+        catch (std::exception const &e) {
+            CLOG(ERROR, "core.device") << e.what();
+            close();
+            throw;
+        }
     }
 
 private:
