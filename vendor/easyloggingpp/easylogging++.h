@@ -2240,7 +2240,7 @@ private:
 };
 }  // namespace base
 /// @brief Resolving function for format specifier
-typedef std::function<const char*(void)> FormatSpecifierValueResolver;
+typedef std::function<const std::string&(void)> FormatSpecifierValueResolver;
 /// @brief User-provided custom format specifier
 /// @see el::Helpers::installCustomFormatSpecifier
 /// @see FormatSpecifierValueResolver
