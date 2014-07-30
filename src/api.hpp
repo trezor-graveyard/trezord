@@ -1,6 +1,7 @@
 #include <boost/network/include/http/server.hpp>
 #include <boost/regex.hpp>
 
+#include <exception>
 #include <functional>
 #include <iostream>
 #include <string>
@@ -32,30 +33,72 @@ std::string
 json_string(std::initializer_list<json_pair> const &il)
 { return json_string(json_value(il)); }
 
-// gathered response
+// gathered response data
+
+template <typename Status>
+struct response_exception
+    : public std::runtime_error
+{
+    Status status;
+
+    response_exception(Status status_, std::string const &message)
+        : status(status_),
+          runtime_error(message)
+    {}
+};
 
 template <typename Server>
 struct response_data
 {
     typedef Server server_type;
 
+    typedef typename server_type::connection connection_type;
     typedef typename server_type::connection_ptr connection_ptr_type;
     typedef typename server_type::response_header header_type;
     typedef typename server_type::connection::status_t status_type;
+    typedef response_exception<status_type> response_exception;
 
     status_type status;
     std::vector<header_type> headers;
 
     void
     set_header(std::string const &name, std::string const &value)
-    { headers.push_back(header_type{name, value}); }
+    {
+        headers.push_back(header_type{name, value});
+    }
 
     void
     write(connection_ptr_type connection, std::string const &body) const
     {
+        CLOG(INFO, "http") << "<- " << status;
         connection->set_status(status);
         connection->set_headers(headers);
         connection->write(body);
+    }
+
+    void
+    handle_error(connection_ptr_type connection, std::exception_ptr eptr)
+    {
+        try {
+            if (eptr) {
+                std::rethrow_exception(eptr);
+            }
+        }
+        catch (response_exception const &e) {
+            CLOG(ERROR, "http") << e.what();
+            status = e.status;
+            write(connection, json_string({{"error", e.what()}}));
+        }
+        catch (std::exception const &e) {
+            CLOG(ERROR, "http") << e.what();
+            status = connection_type::internal_server_error;
+            write(connection, json_string({{"error", e.what()}}));
+        }
+        catch (...) {
+            CLOG(ERROR, "http") << "unknown error";
+            status = connection_type::internal_server_error;
+            write(connection, json_string({{"error", "unknown error"}}));
+        }
     }
 };
 
@@ -70,6 +113,10 @@ struct request_handler
     typedef typename server_type::connection connection_type;
     typedef typename server_type::connection_ptr connection_ptr_type;
     typedef response_data<server_type> response_data_type;
+
+    struct response_error
+        : public response_data_type::response_exception
+    { using response_data_type::response_exception::response_exception; };
 
     request_handler(request_handler const &) = delete;
     request_handler &operator=(request_handler const&) = delete;
@@ -91,8 +138,6 @@ struct request_handler
                response_data_type response,
                connection_ptr_type connection)
     {
-        LOG(INFO) << request.method << " " << request.destination;
-
         response.set_header("Content-Type", "application/json");
 
         try {
@@ -101,11 +146,15 @@ struct request_handler
             dispatch(request, ahandler, params);
             ahandler(this, params, request, response, connection);
         }
-        catch (std::exception const &e) {
-            LOG(ERROR) << e.what();
-            response.status = connection_type::internal_server_error;
-            response.write(connection, json_string({{"error", e.what()}}));
+        catch (...) {
+            response.handle_error(connection, std::current_exception());
         }
+    }
+
+    bool
+    is_url_allowed(std::string const &url)
+    {
+        return kernel.is_allowed(url);
     }
 
 private:
@@ -177,25 +226,26 @@ private:
                      connection_ptr_type connection)
     {
         core::kernel_config config;
-        config.parse_from_signed_string(
-            utils::hex_decode(request.body));
+
+        try {
+            config.parse_from_signed_string(
+                utils::hex_decode(request.body));
+        }
+        catch (std::exception const &e) {
+            throw response_error(
+                connection_type::bad_request, e.what());
+        }
 
         if (!config.is_initialized()) {
-            response.status = connection_type::internal_server_error;
-            response.write(connection,
-                           json_string({
-                                   {"error", "configuration is incomplete"}
-                               }));
-            return;
+            throw response_error(
+                connection_type::bad_request,
+                "configuration is incomplete");
         }
 
         if (!config.is_unexpired()) {
-            response.status = connection_type::internal_server_error;
-            response.write(connection,
-                           json_string({
-                                   {"error", "configuration is expired"}
-                               }));
-            return;
+            throw response_error(
+                connection_type::bad_request,
+                "configuration is expired");
         }
 
         auto origin_header_it = std::find_if(
@@ -204,18 +254,13 @@ private:
             [&] (typename request_type::header_type const &header) {
                 return header.name == "Origin";
             });
+
         if (origin_header_it != request.headers.end()) {
             auto &origin = origin_header_it->value;
             if (!config.is_url_allowed(origin)) {
-                LOG(WARNING)
-                    << "configure call from invalid origin: "
-                    << origin;
-                response.status = connection_type::forbidden;
-                response.write(connection,
-                               json_string({
-                                       {"error", "invalid config"}
-                                   }));
-                return;
+                throw response_error(
+                    connection_type::forbidden,
+                    "origin not allowed by given config");
             }
         }
 
@@ -257,12 +302,8 @@ private:
                     response.status = connection_type::ok;
                     response.write(connection, json_string(list));
                 }
-                catch (std::exception const &e) {
-                    response.status = connection_type::internal_server_error;
-                    response.write(connection,
-                                   json_string({
-                                           {"error", e.what()}
-                                       }));
+                catch (...) {
+                    response.handle_error(connection, std::current_exception());
                 }
             });
     }
@@ -287,12 +328,8 @@ private:
                                        {"session", session_id}
                                    }));
             }
-            catch (std::exception const &e) {
-                response.status = connection_type::internal_server_error;
-                response.write(connection,
-                               json_string({
-                                       {"error", e.what()}
-                                   }));
+            catch (...) {
+                response.handle_error(connection, std::current_exception());
             }
         };
 
@@ -300,23 +337,15 @@ private:
             [=] () mutable {
                 try {
                     if (!kernel.is_path_supported(device_path)) {
-                        response.status = connection_type::forbidden;
-                        response.write(
-                            connection,
-                            json_string({
-                                    {"error", "device not found or unsupported"}
-                                }));
-                        return;
+                        throw response_error(
+                            connection_type::forbidden,
+                            "device not found or unsupported");
                     }
 
                     kernel.get_device_executor(device_path)->add(acquisition);
                 }
-                catch (std::exception const &e) {
-                    response.status = connection_type::internal_server_error;
-                    response.write(connection,
-                                   json_string({
-                                           {"error", e.what()}
-                                       }));
+                catch (...) {
+                    response.handle_error(connection, std::current_exception());
                 }
             });
     }
@@ -329,8 +358,17 @@ private:
     {
         auto session_id = params.str(1);
 
-        auto device = kernel.get_device_kernel_by_session_id(session_id);
-        auto executor = kernel.get_device_executor_by_session_id(session_id);
+        core::device_kernel *device;
+        core::async_executor *executor;
+
+        try {
+            device = kernel.get_device_kernel_by_session_id(session_id);
+            executor = kernel.get_device_executor_by_session_id(session_id);
+        }
+        catch (core::kernel::unknown_session const &e) {
+            throw response_error(
+                connection_type::not_found, e.what());
+        }
 
         executor->add(
             [=] () mutable {
@@ -341,12 +379,8 @@ private:
                     response.status = connection_type::ok;
                     response.write(connection, json_string({}));
                 }
-                catch (std::exception const &e) {
-                    response.status = connection_type::internal_server_error;
-                    response.write(connection,
-                                   json_string({
-                                           {"error", e.what()}
-                                       }));
+                catch (...) {
+                    response.handle_error(connection, std::current_exception());
                 }
             });
     }
@@ -359,8 +393,17 @@ private:
     {
         auto session_id = params.str(1);
 
-        auto device = kernel.get_device_kernel_by_session_id(session_id);
-        auto executor = kernel.get_device_executor_by_session_id(session_id);
+        core::device_kernel *device;
+        core::async_executor *executor;
+
+        try {
+            device = kernel.get_device_kernel_by_session_id(session_id);
+            executor = kernel.get_device_executor_by_session_id(session_id);
+        }
+        catch (core::kernel::unknown_session const &e) {
+            throw response_error(
+                connection_type::not_found, e.what());
+        }
 
         executor->add(
             [=] () mutable {
@@ -379,12 +422,8 @@ private:
                     response.status = connection_type::ok;
                     response.write(connection, json_string(json));
                 }
-                catch (std::exception const &e) {
-                    response.status = connection_type::internal_server_error;
-                    response.write(connection,
-                                   json_string({
-                                           {"error", e.what()}
-                                       }));
+                catch (...) {
+                    response.handle_error(connection, std::current_exception());
                 }
             });
     }
@@ -395,8 +434,9 @@ private:
                response_data_type response,
                connection_ptr_type connection)
     {
-        response.status = connection_type::not_found;
-        response.write(connection, json_string({}));
+        throw response_error(
+            connection_type::not_found,
+            "not found");
     }
 };
 
@@ -459,6 +499,9 @@ private:
     {
         body.write(range.begin(), size);
         body_size += size;
+
+        CLOG(DEBUG, "http.body")
+            << body_size << "B/" << body_max_size << "B";
 
         if (body_size < body_max_size) {
             read_body(request, response, connection);
@@ -543,40 +586,71 @@ struct cors_middleware
                response_data_type response,
                connection_ptr_type connection)
     {
-        auto origin_header_it = std::find_if(
-            request.headers.begin(),
-            request.headers.end(),
-            [&] (typename request_type::header_type const &header) {
-                return header.name == "Origin";
-            });
+        auto origin_header_it = find_header(request, "Origin");
 
-        if (origin_header_it == request.headers.end()) { // non-cors
+        if (origin_header_it == request.headers.end()) {
+            CLOG(INFO, "http.cors") << "non-cors accepted";
             handler(request, response, connection);
             return;
         }
         auto &origin = origin_header_it->value;
 
         if (!validator(origin)) {
-            LOG(WARNING)
-                << "invalid origin encountered: " << origin;
+            CLOG(WARNING, "http.cors") << "invalid origin refused: " << origin;
+
             response.status = connection_type::forbidden;
             response.write(connection, "Invalid Origin");
             return;
         }
 
-        if (request.method == "OPTIONS") { // pre-flight
-            LOG(INFO) << "pre-flight request accepted";
-            response.status = connection_type::ok;
+        if (request.method == "OPTIONS") {
+            CLOG(INFO, "http.cors") << "pre-flight accepted";
+
+            project_header(request, "Access-Control-Request-Method",
+                           response, "Access-Control-Allow-Methods");
+            project_header(request, "Access-Control-Request-Headers",
+                           response, "Access-Control-Allow-Headers");
             response.set_header("Access-Control-Allow-Origin", origin);
+            response.status = connection_type::ok;
             response.write(connection, "");
-            return;
+
+        } else {
+            CLOG(INFO, "http.cors") << "accepted";
+
+            response.set_header("Access-Control-Allow-Origin", origin);
+            handler(request, response, connection);
         }
 
-        LOG(INFO) << "request accepted";
-        handler(request, response, connection);
     }
 
 private:
+
+    bool
+    project_header(request_type const &request,
+                   std::string const &request_name,
+                   response_data_type &response,
+                   std::string const &response_name)
+    {
+        auto header_it = find_header(request, request_name);
+        if (header_it != request.headers.end()) {
+            response.set_header(response_name, header_it->value);
+            return true;
+        }
+        return false;
+    }
+
+    auto
+    find_header(request_type const &request,
+                std::string const &name)
+        -> typename decltype(request.headers)::iterator
+    {
+        return std::find_if(
+            request.headers.begin(),
+            request.headers.end(),
+            [&] (typename request_type::header_type const &header) {
+                return header.name == name;
+            });
+    }
 
     handler_type &handler;
     origin_validator_type validator;
@@ -593,23 +667,21 @@ struct connection_handler
 
     connection_handler(handler_type &handler)
         : mw_body(handler),
-          mw_cors(mw_body, [] (std::string const &) {
-                  return true;
-              })
+          mw_cors(mw_body, boost::bind(
+                      &handler_type::is_url_allowed,
+                      &handler, _1))
     {}
 
     void
     operator()(server::request const &request,
                server::connection_ptr connection)
     {
+        CLOG(INFO, "http")
+            << "-> " << request.method
+            << " " << request.destination;
+
         response_data_type response;
         mw_cors(request, response, connection);
-    }
-
-    bool
-    is_url_allowed(std::string const &url)
-    {
-        return true;
     }
 
 private:
