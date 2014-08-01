@@ -1,7 +1,7 @@
 #ifdef _WIN32
-#  define _ELPP_DEFAULT_LOG_FILE "logs\\trezord.log"
+#  define _ELPP_DEFAULT_LOG_FILE "C:\\Windows\\Temp\\trezord.log"
 #else
-#  define _ELPP_DEFAULT_LOG_FILE "logs/trezord.log"
+#  define _ELPP_DEFAULT_LOG_FILE "/var/log/trezord.log"
 #endif
 
 #include <easylogging++.h>
@@ -56,13 +56,9 @@ configure_logging()
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-int
-main(int argc, char *argv[])
+void
+start_server()
 {
-    _START_EASYLOGGINGPP(argc, argv);
-
-    configure_logging();
-
     using namespace trezord;
 
     core::kernel kernel;
@@ -83,6 +79,21 @@ main(int argc, char *argv[])
     LOG(INFO) << "starting server";
     server.run();
     LOG(INFO) << "server finished running";
+}
+
+int
+main(int argc, char *argv[])
+{
+    _START_EASYLOGGINGPP(argc, argv);
+    configure_logging();
+
+    try {
+        start_server();
+    }
+    catch (std::exception const &e) {
+        LOG(FATAL) << e.what();
+        return 1;
+    }
 
     return 0;
 }
