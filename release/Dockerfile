@@ -15,7 +15,12 @@ RUN yum install -y glibc-devel.i686 glibc-static.i686 libgcc.i686 libstdc++-stat
 RUN yum install -y boost-static.i686 libusbx-devel.i686 protobuf-static.i686
 
 # protobuf-static does not install protobuf-devel, workaround
+
 RUN yum install -y protobuf-devel
+
+# remove .so files so static libs are picked instead
+
+RUN rm -f $( rpm -ql boost-devel | grep \.so$ )
 RUN rm -f $( rpm -ql protobuf-devel | grep \.so$ )
 
 # install dependencies for Linux packaging
@@ -26,8 +31,13 @@ RUN gem install fpm --no-document
 # install dependencies for Windows build
 
 RUN yum install -y mingw32-boost-static mingw64-boost-static
-ADD windows/mingw32-protobuf-2.5.0.tar.xz /
-ADD windows/mingw64-protobuf-2.5.0.tar.xz /
+
+COPY windows/mingw32-protobuf-2.5.0-9.fc20.noarch.rpm /
+COPY windows/mingw32-protobuf-static-2.5.0-9.fc20.noarch.rpm /
+COPY windows/mingw64-protobuf-2.5.0-9.fc20.noarch.rpm /
+COPY windows/mingw64-protobuf-static-2.5.0-9.fc20.noarch.rpm /
+
+RUN yum install -y /mingw32-protobuf*.rpm /mingw64-protobuf*.rpm
 
 # install dependencies for Windows packaging
 

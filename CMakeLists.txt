@@ -8,6 +8,12 @@ project(trezord)
 
 option(BUILD_TESTS "Build tests?" off)
 
+set(BUILD_SHARED_LIBS off)
+if (WIN32)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
+endif(WIN32)
+
 include_directories(src)
 
 set (SRCS
@@ -29,8 +35,6 @@ endif(WIN32)
 add_executable(trezord ${SRCS})
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS}")
-
-set(BUILD_SHARED_LIBS off)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_SOURCE_DIR}/cmake/modules"
@@ -69,6 +73,9 @@ target_link_libraries(trezord
   ${OS_LIBRARIES}
   hidapi
   TrezorCrypto)
+
+set_target_properties(trezord PROPERTIES LINK_SEARCH_START_STATIC 1)
+set_target_properties(trezord PROPERTIES LINK_SEARCH_END_STATIC 1)
 
 if(BUILD_TESTS)
 

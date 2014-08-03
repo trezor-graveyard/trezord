@@ -1,17 +1,5 @@
 SetCompressor bzip2
 
-InstallDir ""
-!include LogicLib.nsh
-!include x64.nsh
-
-Function .onInit
-${If} ${RunningX64}
-  StrCpy $InstDir "$ProgramFiles64\TREZOR Bridge"
-${Else}
-  StrCpy $InstDir "$ProgramFiles\TREZOR Bridge"
-${EndIf}
-FunctionEnd
-
 Name "TREZOR Bridge"
 InstallDirRegKey HKLM Software\TREZOR\Bridge InstallDir
 
@@ -46,6 +34,7 @@ Section "Uninstall"
   RMDir "$SMPROGRAMS\TREZOR Bridge"
 
   Delete /rebootok "$INSTDIR\trezord.exe"
+  Delete /rebootok "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
 SectionEnd
 

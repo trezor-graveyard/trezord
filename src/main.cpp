@@ -1,5 +1,5 @@
 #ifdef _WIN32
-#  define _ELPP_DEFAULT_LOG_FILE "C:\\Windows\\Temp\\trezord.log"
+#  define _ELPP_DEFAULT_LOG_FILE "trezord.log"
 #else
 #  define _ELPP_DEFAULT_LOG_FILE "/var/log/trezord.log"
 #endif
