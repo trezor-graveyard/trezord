@@ -4,11 +4,11 @@
 #  define _ELPP_DEFAULT_LOG_FILE "/var/log/trezord.log"
 #endif
 
-#include <easylogging++.h>
-
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <easylogging++.h>
 
 #include "utils.hpp"
 #include "wire.hpp"
