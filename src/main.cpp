@@ -1,12 +1,8 @@
-#ifdef _WIN32
-#  define _ELPP_DEFAULT_LOG_FILE "trezord.log"
-#else
-#  define _ELPP_DEFAULT_LOG_FILE "/var/log/trezord.log"
-#endif
-
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+
+#define _ELPP_NO_DEFAULT_LOG_FILE
 
 #include <easylogging++.h>
 
@@ -20,6 +16,35 @@ _INITIALIZE_EASYLOGGINGPP
 static const auto server_port = "21324";
 static const auto server_address = "127.0.0.1";
 static const auto sleep_time = boost::posix_time::seconds(10);
+
+std::string
+get_log_path()
+{
+#ifdef _WIN32
+
+    auto app_data = getenv("APPDATA");
+    if (!app_data) {
+        throw std::runtime_error("env var APPDATA not found");
+    }
+
+    return std::string(app_data)
+        + "\\TREZOR Bridge\\trezord.log";
+
+#endif
+#ifdef __APPLE__
+
+    auto home = getenv("HOME");
+    if (!home) {
+        throw std::runtime_error("env var HOME not found");
+    }
+
+    return std::string(home)
+        + "/Library/Application Support/TREZOR Bridge/trezord.log";
+
+#endif
+
+    return "/var/log/trezord.log";
+}
 
 void
 configure_logging()
@@ -42,9 +67,14 @@ configure_logging()
                     boost::this_thread::get_id());
             }));
 
+    auto log_path = get_log_path();
+
     el::Configurations config;
 
     config.setToDefault();
+    config.setGlobally(
+        el::ConfigurationType::Filename,
+        get_log_path());
     config.setGlobally(
         el::ConfigurationType::Format,
         "%datetime %level [%logger] [%curr_thread] %msg");
@@ -62,6 +92,8 @@ configure_logging()
         "%datetime %level-%vlevel [%logger] [%curr_thread] %msg");
 
     el::Loggers::reconfigureAllLoggers(config);
+
+    LOG(INFO) << "logging to " << log_path;
 }
 
 void
