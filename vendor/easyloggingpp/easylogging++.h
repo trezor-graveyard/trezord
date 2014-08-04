@@ -1,5 +1,5 @@
 //
-//  Easylogging++ v9.73
+//  Easylogging++ v9.74
 //  Single-header only, cross-platform logging library for C++ applications
 //
 //  Copyright (c) 2014 Majid Khan
@@ -700,13 +700,22 @@ namespace consts {
     static const base::type::char_t* kFatalLevelLogValue    =   ELPP_LITERAL("FATAL");
     static const base::type::char_t* kVerboseLevelLogValue  =   ELPP_LITERAL("VER");
     static const base::type::char_t* kTraceLevelLogValue    =   ELPP_LITERAL("TRACE");
+    static const base::type::char_t* kInfoLevelShortLogValue     =   ELPP_LITERAL("I");
+    static const base::type::char_t* kDebugLevelShortLogValue    =   ELPP_LITERAL("D");
+    static const base::type::char_t* kWarningLevelShortLogValue  =   ELPP_LITERAL("W");
+    static const base::type::char_t* kErrorLevelShortLogValue    =   ELPP_LITERAL("E");
+    static const base::type::char_t* kFatalLevelShortLogValue    =   ELPP_LITERAL("F");
+    static const base::type::char_t* kVerboseLevelShortLogValue  =   ELPP_LITERAL("V");
+    static const base::type::char_t* kTraceLevelShortLogValue    =   ELPP_LITERAL("T");
     // Format specifiers - These are used to define log format
     static const base::type::char_t* kAppNameFormatSpecifier          =      ELPP_LITERAL("%app");
     static const base::type::char_t* kLoggerIdFormatSpecifier         =      ELPP_LITERAL("%logger");
     static const base::type::char_t* kThreadIdFormatSpecifier         =      ELPP_LITERAL("%thread");
     static const base::type::char_t* kSeverityLevelFormatSpecifier    =      ELPP_LITERAL("%level");
+    static const base::type::char_t* kSeverityLevelShortFormatSpecifier    =      ELPP_LITERAL("%levshort");
     static const base::type::char_t* kDateTimeFormatSpecifier         =      ELPP_LITERAL("%datetime");
     static const base::type::char_t* kLogFileFormatSpecifier          =      ELPP_LITERAL("%file");
+    static const base::type::char_t* kLogFileBaseFormatSpecifier      =      ELPP_LITERAL("%fbase");
     static const base::type::char_t* kLogLineFormatSpecifier          =      ELPP_LITERAL("%line");
     static const base::type::char_t* kLogLocationFormatSpecifier      =      ELPP_LITERAL("%loc");
     static const base::type::char_t* kLogFunctionFormatSpecifier      =      ELPP_LITERAL("%func");
@@ -814,9 +823,9 @@ enum class TimestampUnit : base::type::EnumType {
 };
 /// @brief Format flags used to determine specifiers that are active for performance improvements.
 enum class FormatFlags : base::type::EnumType {
-    DateTime = 2, LoggerId = 4, File = 8, Line = 16, Location = 32, Function = 64,
-    User = 128, Host = 256, LogMessage = 512, VerboseLevel = 1024, AppName = 2048, ThreadId = 4096,
-    Level = 8192
+    DateTime = 1<<1, LoggerId = 1<<2, File = 1<<3, Line = 1<<4, Location = 1<<5, Function = 1<<6,
+    User = 1<<7, Host = 1<<8, LogMessage = 1<<9, VerboseLevel = 1<<10, AppName = 1<<11, ThreadId = 1<<12,
+    Level = 1<<13, FileBase = 1<<14, LevelShort = 1<<15,
 };
 /// @brief A milliseconds width class containing actual width and offset for date/time
 class MillisecondsWidth {
@@ -1135,6 +1144,23 @@ public:
     /// @brief builds stripped filename and puts it in buff
     static void buildStrippedFilename(const char* filename, char buff[], 
             std::size_t limit = base::consts::kSourceFilenameMaxLength) {
+        std::size_t sizeOfFilename = strlen(filename);
+        if (sizeOfFilename >= limit) {
+            filename += (sizeOfFilename - limit);
+            if (filename[0] != '.' && filename[1] != '.') {  // prepend if not already
+                filename += 3;  // 3 = '..'
+                STRCAT(buff, "..", limit);
+            }
+        }
+        STRCAT(buff, filename, limit);
+    }
+    /// @brief builds base filename and puts it in buff
+    static void buildBaseFilename(const std::string& fullPath, char buff[], 
+            std::size_t limit = base::consts::kSourceFilenameMaxLength,
+            const char* seperator = base::consts::kFilePathSeperator) {
+        const char *filename = fullPath.c_str();
+        std::size_t lastSlashAt = fullPath.find_last_of(seperator);
+        filename += lastSlashAt ? lastSlashAt+1 : 0;
         std::size_t sizeOfFilename = strlen(filename);
         if (sizeOfFilename >= limit) {
             filename += (sizeOfFilename - limit);
@@ -2105,9 +2131,11 @@ public:
         };  // NOLINT
         conditionalAddFlag(base::consts::kAppNameFormatSpecifier, base::FormatFlags::AppName);
         conditionalAddFlag(base::consts::kSeverityLevelFormatSpecifier, base::FormatFlags::Level);
+        conditionalAddFlag(base::consts::kSeverityLevelShortFormatSpecifier, base::FormatFlags::LevelShort);
         conditionalAddFlag(base::consts::kLoggerIdFormatSpecifier, base::FormatFlags::LoggerId);
         conditionalAddFlag(base::consts::kThreadIdFormatSpecifier, base::FormatFlags::ThreadId);
         conditionalAddFlag(base::consts::kLogFileFormatSpecifier, base::FormatFlags::File);
+        conditionalAddFlag(base::consts::kLogFileBaseFormatSpecifier, base::FormatFlags::FileBase);
         conditionalAddFlag(base::consts::kLogLineFormatSpecifier, base::FormatFlags::Line);
         conditionalAddFlag(base::consts::kLogLocationFormatSpecifier, base::FormatFlags::Location);
         conditionalAddFlag(base::consts::kLogFunctionFormatSpecifier, base::FormatFlags::Function);
@@ -2195,24 +2223,38 @@ protected:
         if (m_level == Level::Debug) {
             base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelFormatSpecifier,
                     base::consts::kDebugLevelLogValue);
+            base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelShortFormatSpecifier,
+                    base::consts::kDebugLevelShortLogValue);
         } else if (m_level == Level::Info) {
             base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelFormatSpecifier,
                     base::consts::kInfoLevelLogValue);
+            base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelShortFormatSpecifier,
+                    base::consts::kInfoLevelShortLogValue);
         } else if (m_level == Level::Warning) {
             base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelFormatSpecifier,
                     base::consts::kWarningLevelLogValue);
+            base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelShortFormatSpecifier,
+                    base::consts::kWarningLevelShortLogValue);
         } else if (m_level == Level::Error) {
             base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelFormatSpecifier,
                     base::consts::kErrorLevelLogValue);
+            base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelShortFormatSpecifier,
+                    base::consts::kErrorLevelShortLogValue);
         } else if (m_level == Level::Fatal) {
             base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelFormatSpecifier,
                     base::consts::kFatalLevelLogValue);
+            base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelShortFormatSpecifier,
+                    base::consts::kFatalLevelShortLogValue);
         } else if (m_level == Level::Verbose) {
             base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelFormatSpecifier,
                     base::consts::kVerboseLevelLogValue);
+            base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelShortFormatSpecifier,
+                    base::consts::kVerboseLevelShortLogValue);
         } else if (m_level == Level::Trace) {
             base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelFormatSpecifier,
                     base::consts::kTraceLevelLogValue);
+            base::utils::Str::replaceFirstWithEscape(m_format, base::consts::kSeverityLevelShortFormatSpecifier,
+                    base::consts::kTraceLevelShortLogValue);
         }
         if (hasFlag(base::FormatFlags::User)) {
             std::string s = base::utils::s_currentUser;
@@ -3609,6 +3651,11 @@ public:
         return m_level;
     }
 
+    inline void clearModules(void) {
+        base::threading::ScopedLock scopedLock(lock());
+        m_modules.clear();
+    }
+
     void setModules(const char* modules) {
         base::threading::ScopedLock scopedLock(lock());
         auto addSuffix = [](std::stringstream& ss, const char* sfx, const char* prev) {
@@ -4077,6 +4124,13 @@ public:
             base::utils::File::buildStrippedFilename(logMessage->file().c_str(), buff);
             buf = base::utils::Str::addToBuff(buff, buf, bufLim);
             base::utils::Str::replaceFirstWithEscape(logLine, base::consts::kLogFileFormatSpecifier, buff);
+        }
+        if (logFormat->hasFlag(base::FormatFlags::FileBase)) {
+           // File
+            char* buf = base::utils::Str::clearBuff(buff, base::consts::kSourceFilenameMaxLength);
+            base::utils::File::buildBaseFilename(logMessage->file(), buff);
+            buf = base::utils::Str::addToBuff(buff, buf, bufLim);
+            base::utils::Str::replaceFirstWithEscape(logLine, base::consts::kLogFileBaseFormatSpecifier, buff);
         }
         if (logFormat->hasFlag(base::FormatFlags::Line)) {
            // Line
@@ -5057,8 +5111,10 @@ protected:
     void handle(const PerformanceTrackingData* data) {
         m_data = data;
         if (data->dataType() == PerformanceTrackingData::DataType::Complete) {
+            std::stringstream ssMessage;
+            ssMessage << "Executed [" << *m_data->blockName() << "] in [" << *m_data->formattedTimeTaken() << "]";
             _ELPP_WRITE_LOG(el::base::Writer, m_data->performanceTracker()->level(), base::DispatchAction::NormalLog, data->loggerId().c_str()) 
-                << "Executed [" << *m_data->blockName() << "] in [" << *m_data->formattedTimeTaken() << "]";
+                << ssMessage.str();
         } else {
             base::type::stringstream_t ss;
             ss << ELPP_LITERAL("Performance checkpoint");
@@ -5619,9 +5675,9 @@ public:
 class VersionInfo : base::StaticClass {
 public:
    /// @brief Current version number
-    static inline const std::string version(void) { return std::string("9.73"); }
+    static inline const std::string version(void) { return std::string("9.74"); }
    /// @brief Release date of current version
-    static inline const std::string releaseDate(void) { return std::string("18-06-2014 0825hrs"); }
+    static inline const std::string releaseDate(void) { return std::string("27-07-2014 1432hrs"); }
 };
 }  // namespace el
 #undef VLOG_IS_ON
