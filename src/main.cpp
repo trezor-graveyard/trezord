@@ -29,9 +29,7 @@ get_log_path()
     if (!app_data) {
         throw std::runtime_error("env var APPDATA not found");
     }
-
-    return std::string(app_data)
-        + "\\TREZOR Bridge\\trezord.log";
+    return std::string(app_data) + "\\TREZOR Bridge\\trezord.log";
 
 #endif
 #ifdef __APPLE__
@@ -40,9 +38,7 @@ get_log_path()
     if (!home) {
         throw std::runtime_error("env var HOME not found");
     }
-
-    return std::string(home)
-        + "/Library/Application Support/TREZOR Bridge/trezord.log";
+    return std::string(home) + "/Library/Logs/trezord.log";
 
 #endif
 
