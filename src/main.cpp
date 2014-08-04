@@ -1,10 +1,9 @@
-#define _ELPP_THREAD_SAFE 1
-#define _ELPP_FORCE_USE_STD_THREAD 1
-
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#define _ELPP_THREAD_SAFE 1
+#define _ELPP_FORCE_USE_STD_THREAD 1
 #define _ELPP_NO_DEFAULT_LOG_FILE
 
 #include <easylogging++.h>
