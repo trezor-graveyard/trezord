@@ -320,8 +320,8 @@
 #include <type_traits>
 #if _ELPP_THREADING_ENABLED
 #   if _ELPP_USE_STD_THREADING
-#      include <mutex>
-#      include <thread>
+#      include <boost/thread/thread.hpp>
+#      include <boost/thread/mutex.hpp>
 #   else
 #      if _ELPP_OS_UNIX
 #         include <pthread.h>
@@ -990,11 +990,11 @@ typedef base::threading::internal::ScopedLock<base::threading::Mutex> ScopedLock
 /// @brief Gets ID of currently running threading using std::this_thread::get_id()
 static inline std::string getCurrentThreadId(void) {
     std::stringstream ss;
-    ss << std::this_thread::get_id();
+    ss << boost::this_thread::get_id();
     return ss.str();
 }
-typedef std::mutex Mutex;
-typedef std::lock_guard<std::mutex> ScopedLock;
+typedef boost::mutex Mutex;
+typedef boost::lock_guard<boost::mutex> ScopedLock;
 #   endif  // !_ELPP_USE_STD_THREADING
 #else
 namespace internal {

@@ -1,3 +1,6 @@
+#define _ELPP_THREAD_SAFE 1
+#define _ELPP_FORCE_USE_STD_THREAD 1
+
 #ifdef _WIN32
 #  define _ELPP_DEFAULT_LOG_FILE "trezord.log"
 #else
@@ -34,32 +37,24 @@ configure_logging()
 
     el::Loggers::getLogger("wire.enumerate");
 
-    // easylogging has a %thread format with std::thread support,
-    // sadly we need to use boost::thread to accomodate gcc 4.8
-    el::Helpers::installCustomFormatSpecifier(
-        el::CustomFormatSpecifier("%curr_thread", [] {
-                return boost::lexical_cast<std::string>(
-                    boost::this_thread::get_id());
-            }));
-
     el::Configurations config;
 
     config.setToDefault();
     config.setGlobally(
         el::ConfigurationType::Format,
-        "%datetime %level [%logger] [%curr_thread] %msg");
+        "%datetime %level [%logger] [%thread] %msg");
     config.set(
         el::Level::Debug,
         el::ConfigurationType::Format,
-        "%datetime %level [%logger] [%curr_thread] %msg");
+        "%datetime %level [%logger] [%thread] %msg");
     config.set(
         el::Level::Trace,
         el::ConfigurationType::Format,
-        "%datetime %level [%logger] [%curr_thread] %msg");
+        "%datetime %level [%logger] [%thread] %msg");
     config.set(
         el::Level::Verbose,
         el::ConfigurationType::Format,
-        "%datetime %level-%vlevel [%logger] [%curr_thread] %msg");
+        "%datetime %level-%vlevel [%logger] [%thread] %msg");
 
     el::Loggers::reconfigureAllLoggers(config);
 }
