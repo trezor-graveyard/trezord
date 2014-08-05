@@ -236,6 +236,10 @@ private:
                 connection_type::bad_request, e.what());
         }
 
+        LOG(INFO)
+            << "parsed configuration: " << std::endl
+            << config.get_debug_string();
+
         if (!config.is_initialized()) {
             throw response_error(
                 connection_type::bad_request,

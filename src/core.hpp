@@ -114,16 +114,8 @@ struct kernel_config
     void
     parse_from_signed_string(std::string const &str)
     {
-        CLOG(INFO, "core.config") << "parsing config";
-
         auto data = verify_signature(str);
         c.ParseFromArray(data.first, data.second);
-
-        std::time_t current_time = std::time(nullptr);
-        LOG(DEBUG)
-            << "config valid until: " << c.valid_until() << ", "
-            << "current time: " << current_time << " "
-            << "(delta " << c.valid_until() - current_time << ")";
     }
 
     bool
@@ -157,6 +149,14 @@ struct kernel_config
             });
 
         return whitelisted && !blacklisted;
+    }
+
+    std::string
+    get_debug_string()
+    {
+        Configuration c_copy(c);
+        c_copy.clear_wire_protocol();
+        return c_copy.DebugString();
     }
 
 private:
