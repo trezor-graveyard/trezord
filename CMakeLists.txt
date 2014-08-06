@@ -9,8 +9,8 @@ project(trezord)
 option(BUILD_TESTS "Build tests?" off)
 
 set(BUILD_SHARED_LIBS off)
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 if (WIN32)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
   set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
 endif(WIN32)
 
