@@ -56,7 +56,7 @@ struct response_data
     typedef typename server_type::connection_ptr connection_ptr_type;
     typedef typename server_type::response_header header_type;
     typedef typename server_type::connection::status_t status_type;
-    typedef response_exception<status_type> response_exception;
+    typedef response_exception<status_type> response_exception_type;
 
     status_type status;
     std::vector<header_type> headers;
@@ -84,7 +84,7 @@ struct response_data
                 std::rethrow_exception(eptr);
             }
         }
-        catch (response_exception const &e) {
+        catch (response_exception_type const &e) {
             CLOG(ERROR, "http") << e.what();
             status = e.status;
             write(connection, json_string({{"error", e.what()}}));
@@ -115,8 +115,8 @@ struct request_handler
     typedef response_data<server_type> response_data_type;
 
     struct response_error
-        : public response_data_type::response_exception
-    { using response_data_type::response_exception::response_exception; };
+        : public response_data_type::response_exception_type
+    { using response_data_type::response_exception_type::response_exception_type; };
 
     request_handler(request_handler const &) = delete;
     request_handler &operator=(request_handler const&) = delete;

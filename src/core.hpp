@@ -212,7 +212,7 @@ public:
 
     std::string
     get_version()
-    { return "1.1.0"; }
+    { return VERSION; }
 
     bool
     is_configured()

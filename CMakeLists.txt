@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(trezord)
 
+file (STRINGS "VERSION" VERSION)
+
 option(BUILD_TESTS "Build tests?" off)
 
 set(BUILD_SHARED_LIBS off)
@@ -34,7 +36,7 @@ endif(WIN32)
 
 add_executable(trezord ${SRCS})
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -DVERSION='\"${VERSION}\"'")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_SOURCE_DIR}/cmake/modules"
