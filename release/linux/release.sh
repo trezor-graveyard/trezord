@@ -41,6 +41,7 @@ for TYPE in "deb" "rpm"; do
 		--maintainer "stick@satoshilabs.com" \
 		--url "http://bitcointrezor.com/" \
 		--category "Productivity/Security" \
+		--before-install ../release/linux/fpm.before-install.sh \
 		--after-install ../release/linux/fpm.after-install.sh \
 		--before-remove ../release/linux/fpm.before-remove.sh \
 		$NAME-$VERSION.tar.bz2
