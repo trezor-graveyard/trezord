@@ -1,7 +1,15 @@
 trezord
 =======
 
-TREZOR Communication Daemon
+TREZOR Communication Daemon aka TREZOR Bridge
+
+Checking out sources
+--------------------
+
+```
+git clone https://github.com/trezor/trezord.git
+git submodule update --init
+```
 
 Building
 --------
