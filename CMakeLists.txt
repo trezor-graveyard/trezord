@@ -60,9 +60,13 @@ include_directories(
   vendor/easyloggingpp)
 
 if (WIN32)
-  set(OS_LIBRARIES wsock32 ws2_32)
+  set(OS_LIBRARIES wsock32 ws2_32 z)
 else(WIN32)
-  set(OS_LIBRARIES pthread)
+  if (APPLE)
+    set(OS_LIBRARIES pthread)
+  else(APPLE)
+    set(OS_LIBRARIES pthread krb5 k5crypto dl z)
+  endif(APPLE)
 endif(WIN32)
 
 target_link_libraries(trezord
