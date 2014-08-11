@@ -41,6 +41,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 set(Boost_USE_STATIC_LIBS on)
 find_package(Boost 1.53.0 REQUIRED regex thread system unit_test_framework)
+find_package(OpenSSL REQUIRED)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(cppnetlib REQUIRED)
 find_package(jsoncpp REQUIRED)
@@ -66,6 +67,7 @@ endif(WIN32)
 
 target_link_libraries(trezord
   ${Boost_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
   ${CPPNETLIB_LIBRARIES}
   ${JSONCPP_LIBRARIES}

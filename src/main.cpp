@@ -17,6 +17,11 @@ _INITIALIZE_EASYLOGGINGPP
 
 static const auto server_port = "21324";
 static const auto server_address = "127.0.0.1";
+
+static const auto https_cert_file = "cert/server.crt";
+static const auto https_privkey_file = "cert/server.key";
+static const auto https_dh512_file = "cert/dh512.pem";
+
 static const auto sleep_time = boost::posix_time::seconds(10);
 
 std::string
@@ -86,10 +91,11 @@ configure_logging()
     LOG(INFO) << "logging to " << log_path;
 }
 
+template <typename Server>
 void
 shutdown_server(boost::system::error_code const &error,
                 int signal,
-                trezord::api::connection_handler::server &server)
+                Server &server)
 {
     if (!error) {
         LOG(INFO) << "signal: " << signal << ", stopping server";
@@ -124,7 +130,19 @@ start_server()
     // thread pool
     auto thread_pool = make_shared<network::utils::thread_pool>(2);
 
-    // http server
+    // https
+    boost::asio::ssl::context context(boost::asio::ssl::context::sslv23);
+    context.set_options(
+        boost::asio::ssl::context::default_workarounds
+        | boost::asio::ssl::context::no_sslv2
+        | boost::asio::ssl::context::single_dh_use);
+    context.use_certificate_file(https_cert_file,
+                                 boost::asio::ssl::context::pem);
+    context.use_rsa_private_key_file(https_privkey_file,
+                                     boost::asio::ssl::context::pem);
+    context.use_tmp_dh_file(https_dh512_file);
+
+    // server
     server_type::options options(connection_handler);
     server_type server(
         options
@@ -132,11 +150,13 @@ start_server()
         .io_service(io_service)
         .thread_pool(thread_pool)
         .address(server_address)
-        .port(server_port));
+        .port(server_port),
+        context);
 
     // signal handling for clear shutdown
     asio::signal_set signals(ref(*io_service), SIGINT, SIGTERM);
-    signals.async_wait(bind(shutdown_server, _1, _2, ref(server)));
+    signals.async_wait(
+        bind(&shutdown_server<server_type>, _1, _2, ref(server)));
 
     // start the server
     LOG(INFO) << "starting server";
