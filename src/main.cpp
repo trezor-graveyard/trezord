@@ -2,6 +2,8 @@
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include <boost/network/include/http/client.hpp>
+
 #define _ELPP_THREAD_SAFE 1
 #define _ELPP_FORCE_USE_STD_THREAD 1
 #define _ELPP_NO_DEFAULT_LOG_FILE
@@ -18,8 +20,8 @@ _INITIALIZE_EASYLOGGINGPP
 static const auto server_port = "21324";
 static const auto server_address = "127.0.0.1";
 
-static const auto https_cert_file = "cert/server.crt";
-static const auto https_privkey_file = "cert/server.key";
+static const auto https_cert_uri = "http://localhost:8080/cert/server.crt";
+static const auto https_privkey_uri = "http://localhost:8080/cert/server.key";
 static const auto https_dh512_file = "cert/dh512.pem";
 
 static const auto sleep_time = boost::posix_time::seconds(10);
@@ -103,6 +105,44 @@ shutdown_server(boost::system::error_code const &error,
     }
 }
 
+std::string
+download_uri(const std::string &uri)
+{
+    using namespace boost::network;
+
+    http::client::options options;
+    http::client client(options.follow_redirects(true));
+    http::client::request request(uri);
+
+    LOG(INFO) << "requesting " << uri;
+    http::client::response response = client.get(request);
+    LOG(INFO) << "response " << int(status(response));
+
+    if (status(response) != 200) {
+        throw std::runtime_error("request failed");
+    }
+    return body(response);
+}
+
+void
+configure_https(boost::asio::ssl::context &context)
+{
+    context.set_options(
+        boost::asio::ssl::context::default_workarounds
+        | boost::asio::ssl::context::no_sslv2
+        | boost::asio::ssl::context::single_dh_use);
+
+    context.use_tmp_dh_file(https_dh512_file);
+
+    trezord::crypto::ssl::load_privkey(
+        context.native_handle(),
+        download_uri(https_privkey_uri));
+
+    trezord::crypto::ssl::load_cert(
+        context.native_handle(),
+        download_uri(https_cert_uri));
+}
+
 void
 start_server()
 {
@@ -132,15 +172,7 @@ start_server()
 
     // https
     boost::asio::ssl::context context(boost::asio::ssl::context::sslv23);
-    context.set_options(
-        boost::asio::ssl::context::default_workarounds
-        | boost::asio::ssl::context::no_sslv2
-        | boost::asio::ssl::context::single_dh_use);
-    context.use_certificate_file(https_cert_file,
-                                 boost::asio::ssl::context::pem);
-    context.use_rsa_private_key_file(https_privkey_file,
-                                     boost::asio::ssl::context::pem);
-    context.use_tmp_dh_file(https_dh512_file);
+    configure_https(context);
 
     // server
     server_type::options options(connection_handler);
