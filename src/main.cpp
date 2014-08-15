@@ -132,8 +132,6 @@ configure_https(boost::asio::ssl::context &context)
         | boost::asio::ssl::context::no_sslv2
         | boost::asio::ssl::context::single_dh_use);
 
-    context.use_tmp_dh_file(https_dh512_file);
-
     trezord::crypto::ssl::load_privkey(
         context.native_handle(),
         download_uri(https_privkey_uri));
