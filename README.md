@@ -8,6 +8,7 @@ Checking out sources
 
 ```
 git clone https://github.com/trezor/trezord.git
+cd trezord
 git submodule update --init
 ```
 
