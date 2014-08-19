@@ -23,22 +23,15 @@ namespace wire
 // open/close/read/write use shared locks.
 static boost::shared_mutex hid_mutex;
 
+using shared_hid_lock = boost::shared_lock<boost::shared_mutex>;
+using unique_hid_lock = boost::unique_lock<boost::shared_mutex>;
+
 struct device_info
 {
     std::uint16_t vendor_id;
     std::uint16_t product_id;
     std::wstring serial_number;
     std::string path;
-
-    device_info(std::uint16_t vendor_id_,
-                std::uint16_t product_id_,
-                std::wstring const &serial_number_,
-                std::string const &path_)
-        : vendor_id(vendor_id_),
-          product_id(product_id_),
-          serial_number(std::move(serial_number_)),
-          path(std::move(path_))
-    {}
 };
 
 typedef std::vector<device_info> device_info_list;
@@ -47,12 +40,11 @@ template <typename F>
 device_info_list
 enumerate_connected_devices(F filter)
 {
-    boost::unique_lock<boost::shared_mutex> l(hid_mutex);
-
     CLOG(INFO, "wire.enumerate") << "enumerating";
 
+    unique_hid_lock lock{hid_mutex};
     device_info_list list;
-    hid_device_info *infos = hid_enumerate(0x00, 0x00);
+    auto *infos = hid_enumerate(0x00, 0x00);
 
     for (auto i = infos; i != nullptr; i = i->next) {
         // skip interfaces known to be foreign
@@ -65,10 +57,12 @@ enumerate_connected_devices(F filter)
         if (!filter(i)) {
             continue;
         }
-        list.emplace_back(i->vendor_id,
-                          i->product_id,
-                          i->serial_number,
-                          i->path);
+        list.emplace_back(
+            device_info{
+                i->vendor_id,
+                i->product_id,
+                i->serial_number,
+                i->path});
     }
 
     hid_free_enumeration(infos);
@@ -92,19 +86,17 @@ struct device
         : public std::runtime_error
     { using std::runtime_error::runtime_error; };
 
-    device(const device&) = delete;
-    device &operator=(const device&) = delete;
+    device(device const&) = delete;
+    device &operator=(device const&) = delete;
 
     device(char const *path)
     {
-        boost::shared_lock<boost::shared_mutex> l(hid_mutex);
+        shared_hid_lock lock{hid_mutex};
 
         hid = hid_open_path(path);
         if (!hid) {
             throw open_error("HID device open failed");
         }
-
-        hid_set_nonblocking(hid, 0); // always block on read
 
         unsigned char uart[] = {0x41, 0x01}; // enable UART
         unsigned char txrx[] = {0x43, 0x03}; // purge TX/RX FIFOs
@@ -139,30 +131,6 @@ struct device
 
 private:
 
-    void
-    buffer_report()
-    {
-        using namespace std;
-
-        boost::shared_lock<boost::shared_mutex> l(hid_mutex);
-
-        report_type report;
-        int r = hid_read(hid, report.data(), report.size());
-
-        if (r < 0) {
-            throw read_error("HID device read failed");
-        }
-        if (r > 0) {
-            // copy to the buffer, skip the report number
-            char_type rn = report[0];
-            size_type n = min(static_cast<size_type>(rn),
-                              static_cast<size_type>(r - 1));
-            copy(report.begin() + 1,
-                 report.begin() + 1 + n,
-                 back_inserter(read_buffer));
-        }
-    }
-
     size_type
     read_report_from_buffer(char_type *data,
                             size_type len)
@@ -179,13 +147,36 @@ private:
         return n;
     }
 
+    void
+    buffer_report()
+    {
+        using namespace std;
+
+        report_type report;
+        int r = [&] {
+            shared_hid_lock lock{hid_mutex};
+            return hid_read(hid, report.data(), report.size());
+        }();
+
+        if (r < 0) {
+            throw read_error("HID device read failed");
+        }
+        if (r > 0) {
+            // copy to the buffer, skip the report number
+            char_type rn = report[0];
+            size_type n = min(static_cast<size_type>(rn),
+                              static_cast<size_type>(r - 1));
+            copy(report.begin() + 1,
+                 report.begin() + 1 + n,
+                 back_inserter(read_buffer));
+        }
+    }
+
     size_type
     write_report(char_type const *data,
                  size_type len)
     {
         using namespace std;
-
-        boost::shared_lock<boost::shared_mutex> l(hid_mutex);
 
         report_type report;
         report.fill(0x00);
@@ -194,12 +185,16 @@ private:
         size_type n = min(report.size() - 1, len);
         copy(data, data + n, report.begin() + 1); // copy behind report number
 
-        int r = hid_write(hid, report.data(), report.size());
+        int r = [&]{
+            shared_hid_lock lock{hid_mutex};
+            return hid_write(hid, report.data(), report.size());
+        }();
+
         if (r < 0) {
-            throw write_error("HID device write failed");
+            throw write_error{"HID device write failed"};
         }
         if (r < report.size()) {
-            throw write_error("HID device write was insufficient");
+            throw write_error{"HID device write was insufficient"};
         }
 
         return n;
@@ -232,7 +227,7 @@ struct message
 
         device.read_buffered(buf, 1);
         if (buf[0] != '#') {
-            throw header_read_error("header bytes are malformed");
+            throw header_read_error{"header bytes are malformed"};
         }
 
         device.read_buffered(buf, 6);
@@ -244,7 +239,7 @@ struct message
         // 1MB of the message size treshold
         static const std::uint32_t max_size = 1024 * 1024;
         if (size > max_size) {
-            throw header_read_error("message is too big");
+            throw header_read_error{"message is too big"};
         }
 
         data.resize(size);

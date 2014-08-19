@@ -15,23 +15,26 @@ namespace api
 
 // json support
 
-typedef std::pair<std::string, Json::Value> json_pair;
+using json_pair = std::pair<std::string, Json::Value>;
 
 Json::Value
 json_value(std::initializer_list<json_pair> const &il)
 {
-    Json::Value json(Json::objectValue);
-    for (auto const &kv: il) { json[kv.first] = kv.second; }
+    Json::Value json{Json::objectValue};
+    for (auto const &kv: il) {
+        json[kv.first] = kv.second;
+    }
     return json;
 }
 
 std::string
-json_string(Json::Value const &json)
-{ return json.toStyledString(); }
+json_string(Json::Value const &json) { return json.toStyledString(); }
 
 std::string
 json_string(std::initializer_list<json_pair> const &il)
-{ return json_string(json_value(il)); }
+{
+    return json_string(json_value(il));
+}
 
 // gathered response data
 
@@ -42,21 +45,21 @@ struct response_exception
     Status status;
 
     response_exception(Status status_, std::string const &message)
-        : status(status_),
-          runtime_error(message)
+        : status{status_},
+          runtime_error{message}
     {}
 };
 
 template <typename Server>
 struct response_data
 {
-    typedef Server server_type;
+    using server_type = Server;
 
-    typedef typename server_type::connection connection_type;
-    typedef typename server_type::connection_ptr connection_ptr_type;
-    typedef typename server_type::response_header header_type;
-    typedef typename server_type::connection::status_t status_type;
-    typedef response_exception<status_type> response_exception_type;
+    using connection_type = typename server_type::connection;
+    using connection_ptr_type = typename server_type::connection_ptr;
+    using header_type = typename server_type::response_header;
+    using status_type = typename server_type::connection::status_t;
+    using response_exception_type = response_exception<status_type>;
 
     status_type status;
     std::vector<header_type> headers;
@@ -107,12 +110,12 @@ struct response_data
 template <typename Server>
 struct request_handler
 {
-    typedef Server server_type;
+    using server_type = Server;
 
-    typedef typename server_type::request request_type;
-    typedef typename server_type::connection connection_type;
-    typedef typename server_type::connection_ptr connection_ptr_type;
-    typedef response_data<server_type> response_data_type;
+    using request_type = typename server_type::request;
+    using connection_type = typename server_type::connection;
+    using connection_ptr_type = typename server_type::connection_ptr;
+    using response_data_type = response_data<server_type>;
 
     struct response_error
         : public response_data_type::response_exception_type
@@ -122,15 +125,15 @@ struct request_handler
     request_handler &operator=(request_handler const&) = delete;
 
     request_handler(core::kernel &kernel_)
-        : kernel(kernel_),
-          action_routes({
+        : kernel{kernel_},
+          action_routes{{
                   { "GET",  "/",             &request_handler::handle_index },
                   { "GET",  "/enumerate",    &request_handler::handle_enumerate },
                   { "POST", "/configure",    &request_handler::handle_configure },
                   { "POST", "/acquire/(.+)", &request_handler::handle_acquire },
                   { "POST", "/release/(.+)", &request_handler::handle_release },
                   { "POST", "/call/(.+)",    &request_handler::handle_call },
-                  { ".*",   ".*",            &request_handler::handle_404 }})
+                  { ".*",   ".*",            &request_handler::handle_404 }}}
     {}
 
     void
@@ -152,21 +155,18 @@ struct request_handler
     }
 
     bool
-    is_url_allowed(std::string const &url)
-    {
-        return kernel.is_allowed(url);
-    }
+    is_url_allowed(std::string const &url) { return kernel.is_allowed(url); }
 
 private:
 
-    typedef boost::smatch action_params;
-    typedef std::function<
+    using action_params = boost::smatch;
+    using action_handler = std::function<
         void (request_handler*,
               action_params const &,
               request_type const &,
               response_data_type,
               connection_ptr_type)
-        > action_handler;
+        >;
 
     struct action_route
     {
@@ -174,12 +174,12 @@ private:
         const boost::regex destination;
         const action_handler handler;
 
-        action_route(std::string const &m,
-                     std::string const &d,
-                     action_handler const &h)
-            : method(m),
-              destination(d),
-              handler(h) {}
+        action_route(std::string const &method_,
+                     std::string const &destination_,
+                     action_handler const &handler_)
+            : method{method_},
+              destination{destination_},
+              handler{handler_} {}
     };
 
     std::vector<action_route> action_routes;
@@ -198,7 +198,7 @@ private:
                 return;
             }
         }
-        throw std::invalid_argument("route not found");
+        throw std::invalid_argument{"route not found"};
     }
 
     // handlers
@@ -232,8 +232,8 @@ private:
                 utils::hex_decode(request.body));
         }
         catch (std::exception const &e) {
-            throw response_error(
-                connection_type::bad_request, e.what());
+            throw response_error{
+                connection_type::bad_request, e.what()};
         }
 
         LOG(INFO)
@@ -241,15 +241,13 @@ private:
             << config.get_debug_string();
 
         if (!config.is_initialized()) {
-            throw response_error(
-                connection_type::bad_request,
-                "configuration is incomplete");
+            throw response_error{
+                connection_type::bad_request, "configuration is incomplete"};
         }
 
         if (!config.is_unexpired()) {
-            throw response_error(
-                connection_type::bad_request,
-                "configuration is expired");
+            throw response_error{
+                connection_type::bad_request, "configuration is expired"};
         }
 
         auto origin_header_it = std::find_if(
@@ -262,9 +260,8 @@ private:
         if (origin_header_it != request.headers.end()) {
             auto &origin = origin_header_it->value;
             if (!config.is_url_allowed(origin)) {
-                throw response_error(
-                    connection_type::forbidden,
-                    "origin not allowed by given config");
+                throw response_error{
+                    connection_type::forbidden, "origin not allowed by given config"};
             }
         }
 
@@ -286,8 +283,8 @@ private:
                     auto devices = kernel.enumerate_devices();
 
                     Json::Value nil;
-                    Json::Value item(Json::objectValue);
-                    Json::Value list(Json::arrayValue);
+                    Json::Value item{Json::objectValue};
+                    Json::Value list{Json::arrayValue};
 
                     for (auto const &d: devices) {
                         auto const &i = d.first;
@@ -296,9 +293,9 @@ private:
                         item["path"] = i.path;
                         item["vendor"] = i.vendor_id;
                         item["product"] = i.product_id;
-                        item["serialNumber"] = std::string(
+                        item["serialNumber"] = std::string{
                             i.serial_number.begin(),
-                            i.serial_number.end());
+                            i.serial_number.end()};
                         item["session"] = s.empty() ? nil : s;
                         list.append(item);
                     }
@@ -341,9 +338,8 @@ private:
             [=] () mutable {
                 try {
                     if (!kernel.is_path_supported(device_path)) {
-                        throw response_error(
-                            connection_type::forbidden,
-                            "device not found or unsupported");
+                        throw response_error{
+                            connection_type::forbidden, "device not found or unsupported"};
                     }
 
                     kernel.get_device_executor(device_path)->add(acquisition);
@@ -370,8 +366,8 @@ private:
             executor = kernel.get_device_executor_by_session_id(session_id);
         }
         catch (core::kernel::unknown_session const &e) {
-            throw response_error(
-                connection_type::not_found, e.what());
+            throw response_error{
+                connection_type::not_found, e.what()};
         }
 
         executor->add(
@@ -405,8 +401,8 @@ private:
             executor = kernel.get_device_executor_by_session_id(session_id);
         }
         catch (core::kernel::unknown_session const &e) {
-            throw response_error(
-                connection_type::not_found, e.what());
+            throw response_error{
+                connection_type::not_found, e.what()};
         }
 
         executor->add(
@@ -438,9 +434,8 @@ private:
                response_data_type response,
                connection_ptr_type connection)
     {
-        throw response_error(
-            connection_type::not_found,
-            "not found");
+        throw response_error{
+            connection_type::not_found, "not found"};
     }
 };
 
@@ -448,20 +443,20 @@ template <typename Server, typename Handler>
 struct body_middleware
     : boost::enable_shared_from_this< body_middleware<Server, Handler> >
 {
-    typedef Server server_type;
-    typedef Handler handler_type;
+    using server_type = Server;
+    using handler_type = Handler;
 
-    typedef typename server_type::request request_type;
-    typedef typename server_type::connection connection_type;
-    typedef typename server_type::connection_ptr connection_ptr_type;
-    typedef response_data<server_type> response_data_type;
+    using request_type = typename server_type::request;
+    using connection_type = typename server_type::connection;
+    using connection_ptr_type = typename server_type::connection_ptr;
+    using response_data_type = response_data<server_type>;
 
     body_middleware(body_middleware const &) = delete;
     body_middleware &operator=(body_middleware const&) = delete;
 
     body_middleware(handler_type &handler_)
-        : handler(handler_),
-          body()
+        : handler{handler_},
+          body{}
     {}
 
     void
@@ -540,16 +535,16 @@ template <typename Server,
           typename Middleware>
 struct middleware_factory
 {
-    typedef Server server_type;
-    typedef Handler handler_type;
-    typedef Middleware middleware_type;
+    using server_type = Server;
+    using handler_type = Handler;
+    using middleware_type = Middleware;
 
-    typedef typename server_type::request request_type;
-    typedef typename server_type::connection_ptr connection_ptr_type;
-    typedef response_data<server_type> response_data_type;
+    using request_type = typename server_type::request;
+    using connection_ptr_type = typename server_type::connection_ptr;
+    using response_data_type = response_data<server_type>;
 
     middleware_factory(handler_type &handler_)
-        : handler(handler_)
+        : handler{handler_}
     {}
 
     void
@@ -569,20 +564,20 @@ private:
 template <typename Server, typename Handler>
 struct cors_middleware
 {
-    typedef Server server_type;
-    typedef Handler handler_type;
+    using server_type = Server;
+    using handler_type = Handler;
 
-    typedef std::function<bool(std::string const &)> origin_validator_type;
+    using origin_validator_type = std::function<bool(std::string const &)>;
 
-    typedef typename server_type::request request_type;
-    typedef typename server_type::connection connection_type;
-    typedef typename server_type::connection_ptr connection_ptr_type;
-    typedef response_data<server_type> response_data_type;
+    using request_type = typename server_type::request;
+    using connection_type = typename server_type::connection;
+    using connection_ptr_type = typename server_type::connection_ptr;
+    using response_data_type = response_data<server_type>;
 
     cors_middleware(handler_type &handler_,
                     origin_validator_type validator_)
-        : handler(handler_),
-          validator(validator_)
+        : handler{handler_},
+          validator{validator_}
     {}
 
     void
@@ -624,7 +619,6 @@ struct cors_middleware
             response.set_header("Access-Control-Allow-Origin", origin);
             handler(request, response, connection);
         }
-
     }
 
 private:
@@ -662,18 +656,15 @@ private:
 
 struct connection_handler
 {
-    typedef boost::network::http::async_server<
-        connection_handler
-        > server;
-
-    typedef request_handler<server> handler_type;
-    typedef response_data<server> response_data_type;
+    using server = boost::network::http::async_server<connection_handler>;
+    using handler_type = request_handler<server>;
+    using response_data_type = response_data<server>;
 
     connection_handler(handler_type &handler)
-        : mw_body(handler),
-          mw_cors(mw_body, boost::bind(
+        : mw_body{handler},
+          mw_cors{mw_body, boost::bind(
                       &handler_type::is_url_allowed,
-                      &handler, _1))
+                      &handler, _1)}
     {}
 
     void
@@ -690,13 +681,10 @@ struct connection_handler
 
 private:
 
-    typedef middleware_factory<
+    using body_middleware_type = middleware_factory<
         server, handler_type, body_middleware<server, handler_type>
-        > body_middleware_type;
-
-    typedef cors_middleware<
-        server, body_middleware_type
-        > cors_middleware_type;
+    >;
+    using cors_middleware_type = cors_middleware<server, body_middleware_type>;
 
     body_middleware_type mw_body;
     cors_middleware_type mw_cors;

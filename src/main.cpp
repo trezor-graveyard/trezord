@@ -33,9 +33,9 @@ get_log_path()
 
     auto app_data = getenv("APPDATA");
     if (!app_data) {
-        throw std::runtime_error("env var APPDATA not found");
+        throw std::runtime_error{"env var APPDATA not found"};
     }
-    return std::string(app_data) + "\\TREZOR Bridge\\trezord.log";
+    return std::string{app_data} + "\\TREZOR Bridge\\trezord.log";
 
 #endif
 #ifdef __APPLE__
@@ -44,7 +44,7 @@ get_log_path()
     if (!home) {
         throw std::runtime_error("env var HOME not found");
     }
-    return std::string(home) + "/Library/Logs/trezord.log";
+    return std::string{home} + "/Library/Logs/trezord.log";
 
 #endif
 
@@ -63,8 +63,6 @@ configure_logging()
     el::Loggers::getLogger("core.kernel");
 
     el::Loggers::getLogger("wire.enumerate");
-
-    auto log_path = get_log_path();
 
     el::Configurations config;
 
@@ -89,8 +87,6 @@ configure_logging()
         "%datetime %level-%vlevel [%logger] [%thread] %msg");
 
     el::Loggers::reconfigureAllLoggers(config);
-
-    LOG(INFO) << "logging to " << log_path;
 }
 
 template <typename Server>
@@ -111,15 +107,15 @@ download_uri(const std::string &uri)
     using namespace boost::network;
 
     http::client::options options;
-    http::client client(options.follow_redirects(true));
-    http::client::request request(uri);
+    http::client client{options.follow_redirects(true)};
+    http::client::request request{uri};
 
     LOG(INFO) << "requesting " << uri;
     http::client::response response = client.get(request);
     LOG(INFO) << "response " << int(status(response));
 
     if (status(response) != 200) {
-        throw std::runtime_error("request failed");
+        throw std::runtime_error{"request failed"};
     }
     return body(response);
 }
@@ -147,13 +143,13 @@ start_server()
     using namespace boost;
     using namespace trezord;
 
-    typedef api::connection_handler::server server_type;
+    using server_type = api::connection_handler::server;
 
     core::kernel kernel;
 
     // http handlers
-    api::request_handler<server_type> request_handler(kernel);
-    api::connection_handler connection_handler(request_handler);
+    api::request_handler<server_type> request_handler{kernel};
+    api::connection_handler connection_handler{request_handler};
 
     // thread group
     auto threads = make_shared<thread_group>();
@@ -169,22 +165,22 @@ start_server()
     auto thread_pool = make_shared<network::utils::thread_pool>(2);
 
     // https
-    boost::asio::ssl::context context(boost::asio::ssl::context::sslv23);
+    boost::asio::ssl::context context{boost::asio::ssl::context::sslv23};
     configure_https(context);
 
     // server
-    server_type::options options(connection_handler);
-    server_type server(
+    server_type::options options{connection_handler};
+    server_type server{
         options
         .reuse_address(true)
         .io_service(io_service)
         .thread_pool(thread_pool)
         .address(server_address)
         .port(server_port),
-        context);
+        context};
 
     // signal handling for clear shutdown
-    asio::signal_set signals(ref(*io_service), SIGINT, SIGTERM);
+    asio::signal_set signals{ref(*io_service), SIGINT, SIGTERM};
     signals.async_wait(
         bind(&shutdown_server<server_type>, _1, _2, ref(server)));
 
