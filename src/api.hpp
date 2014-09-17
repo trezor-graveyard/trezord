@@ -125,7 +125,7 @@ struct request_handler
     request_handler &operator=(request_handler const&) = delete;
 
     request_handler(core::kernel &kernel_)
-        : kernel{kernel_},
+        : kernel(kernel_),
           action_routes{{
                   { "GET",  "/",             &request_handler::handle_index },
                   { "GET",  "/enumerate",    &request_handler::handle_enumerate },
@@ -455,8 +455,8 @@ struct body_middleware
     body_middleware &operator=(body_middleware const&) = delete;
 
     body_middleware(handler_type &handler_)
-        : handler{handler_},
-          body{}
+        : handler(handler_),
+          body()
     {}
 
     void
@@ -544,7 +544,7 @@ struct middleware_factory
     using response_data_type = response_data<server_type>;
 
     middleware_factory(handler_type &handler_)
-        : handler{handler_}
+        : handler(handler_)
     {}
 
     void
@@ -576,8 +576,8 @@ struct cors_middleware
 
     cors_middleware(handler_type &handler_,
                     origin_validator_type validator_)
-        : handler{handler_},
-          validator{validator_}
+        : handler(handler_),
+          validator(validator_)
     {}
 
     void
