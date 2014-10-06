@@ -25,7 +25,7 @@ case $1 in
       log_warning_msg "$NAME already running"
       exit
     fi
-    if startproc -p $PIDFILE $DAEMON ; then
+    if start_daemon -p $PIDFILE $DAEMON ; then
       log_success_msg "$NAME started"
     else
       log_failure_msg "$NAME start failed"
