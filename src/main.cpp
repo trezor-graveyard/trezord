@@ -156,7 +156,7 @@ start_server()
 
     // io service
     auto io_service = make_shared<asio::io_service>();
-    auto io_work = make_shared<asio::io_service::work>(ref(*io_service));
+    auto io_work = make_shared<asio::io_service::work>(boost::ref(*io_service));
     threads->create_thread(bind(&asio::io_service::run, io_service));
     threads->create_thread(bind(&asio::io_service::run, io_service));
     threads->create_thread(bind(&asio::io_service::run, io_service));
@@ -180,9 +180,9 @@ start_server()
         context};
 
     // signal handling for clear shutdown
-    asio::signal_set signals{ref(*io_service), SIGINT, SIGTERM};
+    asio::signal_set signals{boost::ref(*io_service), SIGINT, SIGTERM};
     signals.async_wait(
-        bind(&shutdown_server<server_type>, _1, _2, ref(server)));
+        bind(&shutdown_server<server_type>, _1, _2, boost::ref(server)));
 
     // start the server
     LOG(INFO) << "starting server";
