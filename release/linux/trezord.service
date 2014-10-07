@@ -3,7 +3,7 @@ Description=TREZOR Bridge
 After=multi-user.target
 
 [Service]
-Type=simple
+Type=forking
 ExecStart=/usr/bin/trezord
 
 [Install]

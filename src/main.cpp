@@ -1,3 +1,9 @@
+#ifdef __linux__
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -22,7 +28,6 @@ static const auto server_address = "127.0.0.1";
 
 static const auto https_cert_uri = "http://localhost:8080/cert/server.crt";
 static const auto https_privkey_uri = "http://localhost:8080/cert/server.key";
-static const auto https_dh512_file = "cert/dh512.pem";
 
 static const auto sleep_time = boost::posix_time::seconds(10);
 
@@ -192,11 +197,50 @@ start_server()
     LOG(INFO) << "server finished running";
 }
 
+#ifdef __linux__
+void
+daemonize()
+{
+    // first fork
+    if (pid_t pid = fork()) {
+        if (pid > 0) {
+            exit(0);
+        } else {
+            LOG(ERROR) << "first fork failed";
+            exit(1);
+        }
+    }
+    setsid();
+    chdir("/");
+    umask(0);
+    // second fork
+    if (pid_t pid = fork()) {
+        if (pid > 0) {
+            exit(0);
+        } else {
+            LOG(ERROR) << "first fork failed";
+            exit(1);
+        }
+    }
+    close(0);
+    close(1);
+    close(2);
+    if (open("/dev/null", O_RDONLY) < 0) {
+        LOG(ERROR) << "unable to open /dev/null";
+        exit(1);
+    }
+}
+#endif
+
 int
 main(int argc, char *argv[])
 {
     _START_EASYLOGGINGPP(argc, argv);
     configure_logging();
+
+#ifdef __linux__
+    daemonize();
+#endif
 
     bool restart_server = false;
 
