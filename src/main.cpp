@@ -8,6 +8,7 @@
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#define BOOST_NETWORK_ENABLE_HTTPS 1
 #include <boost/network/include/http/client.hpp>
 
 #define _ELPP_THREAD_SAFE 1
@@ -26,8 +27,8 @@ _INITIALIZE_EASYLOGGINGPP
 static const auto server_port = "21324";
 static const auto server_address = "127.0.0.1";
 
-static const auto https_cert_uri = "http://localhost:8080/cert/server.crt";
-static const auto https_privkey_uri = "http://localhost:8080/cert/server.key";
+static const auto https_cert_uri = "https://mytrezor.com/data/bridge/cert/server.crt";
+static const auto https_privkey_uri = "https://mytrezor.com/data/bridge/cert/server.key";
 
 static const auto sleep_time = boost::posix_time::seconds(10);
 
