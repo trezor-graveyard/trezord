@@ -3,5 +3,5 @@ if which systemctl > /dev/null ; then
   systemctl disable trezord.service
 else
   service trezord stop
-  chkconfig --del trezord
+  chkconfig --del trezord || update-rc.d -f trezord remove
 fi
