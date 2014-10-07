@@ -77,6 +77,9 @@ configure_logging()
         el::ConfigurationType::Filename,
         get_log_path());
     config.setGlobally(
+        el::ConfigurationType::MaxLogFileSize,
+        "2097152"); // 2 MB
+    config.setGlobally(
         el::ConfigurationType::Format,
         "%datetime %level [%logger] [%thread] %msg");
     config.set(
