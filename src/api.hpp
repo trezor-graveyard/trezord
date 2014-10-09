@@ -1,5 +1,6 @@
 #include <boost/network/include/http/server.hpp>
 #include <boost/regex.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <exception>
 #include <functional>
@@ -34,6 +35,30 @@ std::string
 json_string(std::initializer_list<json_pair> const &il)
 {
     return json_string(json_value(il));
+}
+
+Json::Value
+device_enumeration_to_json(core::kernel::device_enumeration_type const &devices)
+{
+    Json::Value nil;
+    Json::Value item{Json::objectValue};
+    Json::Value list{Json::arrayValue};
+
+    for (auto const &d: devices) {
+        auto const &i = d.first;
+        auto const &s = d.second;
+
+        item["path"] = i.path;
+        item["vendor"] = i.vendor_id;
+        item["product"] = i.product_id;
+        item["serialNumber"] = std::string{
+            i.serial_number.begin(),
+            i.serial_number.end()};
+        item["session"] = s.empty() ? nil : s;
+        list.append(item);
+    }
+
+    return list;
 }
 
 // gathered response data
@@ -128,6 +153,7 @@ struct request_handler
         : kernel(kernel_),
           action_routes{{
                   { "GET",  "/",             &request_handler::handle_index },
+                  { "GET",  "/listen",       &request_handler::handle_listen },
                   { "GET",  "/enumerate",    &request_handler::handle_enumerate },
                   { "POST", "/configure",    &request_handler::handle_configure },
                   { "POST", "/acquire/(.+)", &request_handler::handle_acquire },
@@ -272,6 +298,38 @@ private:
     }
 
     void
+    handle_listen(action_params const &params,
+                  request_type const &request,
+                  response_data_type response,
+                  connection_ptr_type connection)
+    {
+        boost::thread(
+            [=] () mutable {
+                static const auto iter_max = 60;
+                static const auto iter_delay = boost::posix_time::milliseconds(500);
+
+                auto previous = kernel.enumerate_devices();
+
+                for (int i = 0; i < iter_max; i++) {
+                    auto current = kernel.enumerate_devices();
+
+                    if (current == previous) {
+                        boost::this_thread::sleep(iter_delay);
+                        continue;
+                    } else {
+                        auto list = device_enumeration_to_json(current);
+                        response.status = connection_type::ok;
+                        response.write(connection, json_string(list));
+                        return;
+                    }
+                }
+
+                response.status = connection_type::ok;
+                response.write(connection, "");
+            });
+    }
+
+    void
     handle_enumerate(action_params const &params,
                      request_type const &request,
                      response_data_type response,
@@ -281,24 +339,7 @@ private:
             [=] () mutable {
                 try {
                     auto devices = kernel.enumerate_devices();
-
-                    Json::Value nil;
-                    Json::Value item{Json::objectValue};
-                    Json::Value list{Json::arrayValue};
-
-                    for (auto const &d: devices) {
-                        auto const &i = d.first;
-                        auto const &s = d.second;
-
-                        item["path"] = i.path;
-                        item["vendor"] = i.vendor_id;
-                        item["product"] = i.product_id;
-                        item["serialNumber"] = std::string{
-                            i.serial_number.begin(),
-                            i.serial_number.end()};
-                        item["session"] = s.empty() ? nil : s;
-                        list.append(item);
-                    }
+                    auto list = device_enumeration_to_json(devices);
 
                     response.status = connection_type::ok;
                     response.write(connection, json_string(list));
