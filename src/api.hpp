@@ -308,24 +308,21 @@ private:
                 static const auto iter_max = 60;
                 static const auto iter_delay = boost::posix_time::milliseconds(500);
 
-                auto previous = kernel.enumerate_devices();
+                auto devices = kernel.enumerate_devices();
 
                 for (int i = 0; i < iter_max; i++) {
-                    auto current = kernel.enumerate_devices();
-
-                    if (current == previous) {
+                    auto current_devices = kernel.enumerate_devices();
+                    if (current_devices == devices) {
                         boost::this_thread::sleep(iter_delay);
-                        continue;
                     } else {
-                        auto list = device_enumeration_to_json(current);
-                        response.status = connection_type::ok;
-                        response.write(connection, json_string(list));
-                        return;
+                        devices = current_devices;
+                        break;
                     }
                 }
 
+                auto list = device_enumeration_to_json(devices);
                 response.status = connection_type::ok;
-                response.write(connection, "");
+                response.write(connection, json_string(list));
             });
     }
 
