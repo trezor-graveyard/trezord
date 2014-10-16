@@ -7,6 +7,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/program_options.hpp>
 
 #define BOOST_NETWORK_ENABLE_HTTPS 1
 #include <boost/network/include/http/client.hpp>
@@ -239,11 +240,28 @@ daemonize()
 int
 main(int argc, char *argv[])
 {
+    namespace po = boost::program_options;
+    po::options_description desc("Options");
+    desc.add_options()
+       ("foreground,f", "run in foreground, don't fork into background")
+       ("help,h", "produce help message")
+    ;
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+        std::cout << desc << "\n";
+        return 1;
+    }
+
     _START_EASYLOGGINGPP(argc, argv);
     configure_logging();
 
 #ifdef __linux__
-    daemonize();
+    if (!vm.count("foreground")) {
+        daemonize();
+    }
 #endif
 
     bool restart_server = false;
