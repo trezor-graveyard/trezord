@@ -133,18 +133,16 @@ download_uri(const std::string &uri)
 void
 configure_https(boost::asio::ssl::context &context)
 {
-    context.set_options(
-        boost::asio::ssl::context::default_workarounds
-        | boost::asio::ssl::context::no_sslv2
-        | boost::asio::ssl::context::single_dh_use);
+    auto privkey = download_uri(https_privkey_uri);
+    auto cert_chain = download_uri(https_cert_uri);
 
-    trezord::crypto::ssl::load_privkey(
-        context.native_handle(),
-        download_uri(https_privkey_uri));
-
-    trezord::crypto::ssl::load_cert(
-        context.native_handle(),
-        download_uri(https_cert_uri));
+    context.set_options(boost::asio::ssl::context::default_workarounds);
+    context.set_verify_mode(boost::asio::ssl::verify_none);
+    context.use_private_key(
+        boost::asio::buffer(privkey),
+        boost::asio::ssl::context::pem);
+    context.use_certificate_chain(
+        boost::asio::buffer(cert_chain));
 }
 
 void
