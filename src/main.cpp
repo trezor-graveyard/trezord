@@ -155,7 +155,7 @@ start_server()
 
     using server_type = api::connection_handler::server;
 
-    core::kernel kernel;
+    trezord::core::kernel kernel;
 
     // http handlers
     api::request_handler<server_type> request_handler{kernel};
