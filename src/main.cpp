@@ -1,7 +1,5 @@
 #ifdef __linux__
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #endif
 
 #include <boost/asio.hpp>
@@ -200,41 +198,6 @@ start_server()
     LOG(INFO) << "server finished running";
 }
 
-#ifdef __linux__
-void
-daemonize()
-{
-    // first fork
-    if (pid_t pid = fork()) {
-        if (pid > 0) {
-            exit(0);
-        } else {
-            LOG(ERROR) << "first fork failed";
-            exit(1);
-        }
-    }
-    setsid();
-    chdir("/");
-    umask(0);
-    // second fork
-    if (pid_t pid = fork()) {
-        if (pid > 0) {
-            exit(0);
-        } else {
-            LOG(ERROR) << "first fork failed";
-            exit(1);
-        }
-    }
-    close(0);
-    close(1);
-    close(2);
-    if (open("/dev/null", O_RDONLY) < 0) {
-        LOG(ERROR) << "unable to open /dev/null";
-        exit(1);
-    }
-}
-#endif
-
 int
 main(int argc, char *argv[])
 {
@@ -258,7 +221,10 @@ main(int argc, char *argv[])
 
 #ifdef __linux__
     if (!vm.count("foreground")) {
-        daemonize();
+        if (daemon(0, 0) < 0) {
+            LOG(ERROR) << "could not daemonize";
+            exit(1);
+        }
     }
 #endif
 
