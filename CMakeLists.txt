@@ -31,6 +31,10 @@ if (WIN32)
   set (SRCS src/trezord.rc ${SRCS})
 endif(WIN32)
 
+if (UNIX AND NOT APPLE)
+  set (SRCS src/glibc_compat.c ${SRCS})
+endif(UNIX AND NOT APPLE)
+
 add_executable(trezord ${SRCS})
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -DVERSION='\"${VERSION}\"'")
