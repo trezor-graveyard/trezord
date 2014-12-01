@@ -330,24 +330,29 @@ private:
     {
         boost::thread(
             [=] () mutable {
-                static const auto iter_max = 60;
-                static const auto iter_delay = boost::posix_time::milliseconds(500);
+                try {
+                    static const auto iter_max = 60;
+                    static const auto iter_delay = boost::posix_time::milliseconds(500);
 
-                auto devices = kernel.enumerate_devices();
+                    auto devices = kernel.enumerate_devices();
 
-                for (int i = 0; i < iter_max; i++) {
-                    auto current_devices = kernel.enumerate_devices();
-                    if (current_devices == devices) {
-                        boost::this_thread::sleep(iter_delay);
-                    } else {
-                        devices = current_devices;
-                        break;
+                    for (int i = 0; i < iter_max; i++) {
+                        auto current_devices = kernel.enumerate_devices();
+                        if (current_devices == devices) {
+                            boost::this_thread::sleep(iter_delay);
+                        } else {
+                            devices = current_devices;
+                            break;
+                        }
                     }
-                }
 
-                auto list = device_enumeration_to_json(devices);
-                response.status = connection_type::ok;
-                response.write(connection, json_string(list));
+                    auto list = device_enumeration_to_json(devices);
+                    response.status = connection_type::ok;
+                    response.write(connection, json_string(list));
+                }
+                catch (...) {
+                    response.handle_error(connection, std::current_exception());
+                }
             });
     }
 
