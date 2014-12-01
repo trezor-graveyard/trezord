@@ -52,9 +52,15 @@ json_string(Json::Value const &json) { return json.toStyledString(); }
 
 std::string
 json_string(std::initializer_list<json_pair> const &il)
-{
-    return json_string(json_value(il));
-}
+{ return json_string(json_value(il)); }
+
+std::string
+encode_device_path(core::device_kernel::device_path_type const &path)
+{ return utils::hex_encode(path); }
+
+core::device_kernel::device_path_type
+decode_device_path(std::string const &hex)
+{ return utils::hex_decode(hex); }
 
 Json::Value
 device_enumeration_to_json(core::kernel::device_enumeration_type const &devices)
@@ -67,7 +73,7 @@ device_enumeration_to_json(core::kernel::device_enumeration_type const &devices)
         auto const &i = d.first;
         auto const &s = d.second;
 
-        item["path"] = i.path;
+        item["path"] = encode_device_path(i.path);
         item["vendor"] = i.vendor_id;
         item["product"] = i.product_id;
         item["serialNumber"] = std::string{
@@ -372,7 +378,7 @@ private:
                    response_data_type response,
                    connection_ptr_type connection)
     {
-        auto device_path = params.str(1);
+        auto device_path = decode_device_path(params.str(1));
 
         auto acquisition = [=] () mutable {
             try {
