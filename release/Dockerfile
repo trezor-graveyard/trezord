@@ -4,6 +4,7 @@ FROM fedora:20
 
 # update package repositories
 
+RUN yum install -y deltarpm yum-plugin-fastestmirror
 RUN yum update -y
 
 # install development tools
