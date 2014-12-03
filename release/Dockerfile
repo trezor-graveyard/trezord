@@ -4,6 +4,10 @@ FROM fedora:20
 
 # update package repositories
 
+RUN yum update -y
+
+# install development tools
+
 RUN yum install -y cmake gcc gcc-c++ git make patchutils pkgconfig wget
 
 # install dependencies for Linux build
