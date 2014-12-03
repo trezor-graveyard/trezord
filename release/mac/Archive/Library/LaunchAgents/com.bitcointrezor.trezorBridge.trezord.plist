@@ -11,7 +11,12 @@
     <key>RunAtLoad</key>
     <true/>
 
-    <key>Program</key>
-    <string>./Applications/Utilities/TREZOR Bridge/trezord</string>
+    <key>EnableGlobbing</key>
+    <true/>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>~/Applications/Utilities/TREZOR Bridge/trezord</string>
+    </array>
   </dict>
 </plist>
