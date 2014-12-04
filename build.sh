@@ -20,7 +20,9 @@ esac
 # Compile cpp-netlib
 if [ \! -d $BUILDDIR/lib/cpp-netlib ]; then
   mkdir -p $BUILDDIR/lib/cpp-netlib && cd $BUILDDIR/lib/cpp-netlib
-  cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE $PLATFORM_FILE ../../../vendor/cpp-netlib
+  cmake -DCPP-NETLIB_BUILD_TESTS=off \
+        -DCPP-NETLIB_BUILD_EXAMPLES=off \
+        -DCMAKE_BUILD_TYPE=$BUILDTYPE $PLATFORM_FILE ../../../vendor/cpp-netlib
   make $JOBS
   cd ../../..
 fi

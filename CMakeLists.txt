@@ -10,6 +10,12 @@ file (STRINGS "VERSION" VERSION)
 
 option(BUILD_TESTS "Build tests?" off)
 
+# dynamic libs
+if (NOT APPLE)
+  find_package(OpenSSL REQUIRED)
+endif(NOT APPLE)
+
+# use static libs only
 set(BUILD_SHARED_LIBS off)
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
@@ -45,7 +51,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 set(Boost_USE_STATIC_LIBS on)
 find_package(Boost 1.53.0 REQUIRED regex thread system unit_test_framework program_options)
-find_package(OpenSSL REQUIRED)
+if (NOT APPLE) # dynamic lib on apple
+  find_package(OpenSSL REQUIRED)
+endif(NOT APPLE)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(cppnetlib REQUIRED)
 find_package(jsoncpp REQUIRED)

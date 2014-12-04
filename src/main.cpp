@@ -184,25 +184,25 @@ start_server()
     auto io_work = make_shared<asio::io_service::work>(boost::ref(*io_service));
     threads->create_thread(bind(&asio::io_service::run, io_service));
     threads->create_thread(bind(&asio::io_service::run, io_service));
-    threads->create_thread(bind(&asio::io_service::run, io_service));
 
     // thread pool
     auto thread_pool = make_shared<network::utils::thread_pool>(2);
 
     // https
-    boost::asio::ssl::context context{boost::asio::ssl::context::sslv23};
-    configure_https(context);
+    auto context = make_shared<boost::asio::ssl::context>(
+        boost::asio::ssl::context::sslv23);
+    configure_https(*context);
 
     // server
     server_type::options options{connection_handler};
     server_type server{
         options
-        .reuse_address(true)
-        .io_service(io_service)
-        .thread_pool(thread_pool)
-        .address(server_address)
-        .port(server_port),
-        context};
+            .reuse_address(true)
+            .io_service(io_service)
+            .thread_pool(thread_pool)
+            .address(server_address)
+            .port(server_port)
+            .context(context)};
 
     // signal handling for clear shutdown
     asio::signal_set signals{boost::ref(*io_service), SIGINT, SIGTERM};
