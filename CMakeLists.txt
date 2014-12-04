@@ -11,9 +11,9 @@ file (STRINGS "VERSION" VERSION)
 option(BUILD_TESTS "Build tests?" off)
 
 # dynamic libs
-if (NOT APPLE)
+if (APPLE)
   find_package(OpenSSL REQUIRED)
-endif(NOT APPLE)
+endif(APPLE)
 
 # use static libs only
 set(BUILD_SHARED_LIBS off)
