@@ -27,8 +27,6 @@
 #include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <boost/asio/io_service.hpp>
-
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -38,40 +36,9 @@ namespace trezord
 namespace core
 {
 
-// loosely based on:
-// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3562.pdf
-struct async_executor
-{
-    async_executor()
-        : io_service{},
-          io_work{io_service},
-          thread{boost::bind(&io_service_type::run, &io_service)}
-    {}
-
-    ~async_executor()
-    {
-        io_service.stop();
-        thread.join();
-    }
-
-    void
-    add(std::function<void()> const &closure)
-    {
-        io_service.post(closure);
-    }
-
-private:
-
-    typedef boost::asio::io_service io_service_type;
-
-    io_service_type io_service;
-    io_service_type::work io_work;
-    boost::thread thread;
-};
-
 struct device_kernel
 {
-    typedef std::string device_path_type;
+    using device_path_type = std::string;
 
     device_path_type device_path;
 
@@ -203,11 +170,11 @@ private:
 
 struct kernel
 {
-    typedef std::string session_id_type;
-    typedef std::string device_path_type;
-    typedef std::vector<
+    using session_id_type = std::string;
+    using device_path_type = std::string;
+    using device_enumeration_type = std::vector<
         std::pair<wire::device_info, session_id_type>
-        > device_enumeration_type;
+        >;
 
     struct missing_config
         : public std::logic_error
@@ -230,14 +197,20 @@ public:
     { return VERSION; }
 
     bool
-    is_configured()
+    has_config()
     { return config.is_initialized(); }
 
+    kernel_config const &
+    get_config()
+    { return config; }
+
     void
-    set_config(kernel_config const &config_)
+    set_config(kernel_config const &new_config)
     {
-        lock_type l{mutex};
-        config = config_;
+        lock_type lock{mutex};
+
+        config = new_config;
+
         pb_state.load_from_set(config.c.wire_protocol());
         pb_wire_codec.load_protobuf_state();
     }
@@ -245,23 +218,29 @@ public:
     bool
     is_allowed(std::string const &url)
     {
-        lock_type l{mutex};
-        return (!config.is_initialized())
-            || (config.is_unexpired() && config.is_url_allowed(url));
+        lock_type lock{mutex};
+
+        if (!has_config()) {
+            return true;
+        }
+
+        return config.is_unexpired() && config.is_url_allowed(url);
     }
 
     // device enumeration
 
-    async_executor *
+    utils::async_executor *
     get_enumeration_executor()
-    { return &enumeration_executor; }
+    {
+        return &enumeration_executor;
+    }
 
     device_enumeration_type
     enumerate_devices()
     {
-        lock_type l{mutex};
+        lock_type lock{mutex};
 
-        if (!is_configured()) {
+        if (!has_config()) {
             throw missing_config{"not configured"};
         }
 
@@ -296,9 +275,9 @@ public:
     device_kernel *
     get_device_kernel(device_path_type const &device_path)
     {
-        lock_type l{mutex};
+        lock_type lock{mutex};
 
-        if (!is_configured()) {
+        if (!has_config()) {
             throw missing_config{"not configured"};
         }
 
@@ -313,9 +292,9 @@ public:
     device_kernel *
     get_device_kernel_by_session_id(session_id_type const &session_id)
     {
-        lock_type l{mutex};
+        lock_type lock{mutex};
 
-        if (!is_configured()) {
+        if (!has_config()) {
             throw missing_config{"not configured"};
         }
 
@@ -333,12 +312,12 @@ public:
         return get_device_kernel(session_it->first);
     }
 
-    async_executor *
+    utils::async_executor *
     get_device_executor(device_path_type const &device_path)
     {
-        lock_type l{mutex};
+        lock_type lock{mutex};
 
-        if (!is_configured()) {
+        if (!has_config()) {
             throw missing_config{"not configured"};
         }
 
@@ -350,12 +329,12 @@ public:
         return &executor_r.first->second;
     }
 
-    async_executor *
+    utils::async_executor *
     get_device_executor_by_session_id(session_id_type const &session_id)
     {
-        lock_type l{mutex};
+        lock_type lock{mutex};
 
-        if (!is_configured()) {
+        if (!has_config()) {
             throw missing_config("not configured");
         }
 
@@ -378,9 +357,9 @@ public:
     session_id_type
     acquire_session(device_path_type const &device_path)
     {
-        lock_type l{mutex};
+        lock_type lock{mutex};
 
-        if (!is_configured()) {
+        if (!has_config()) {
             throw missing_config{"not configured"};
         }
 
@@ -391,10 +370,10 @@ public:
     void
     release_session(session_id_type const &session_id)
     {
-        lock_type l{mutex};
+        lock_type lock{mutex};
 
-        if (!is_configured()) {
-            throw missing_config("not configured");
+        if (!has_config()) {
+            throw missing_config{"not configured"};
         }
 
         auto session_it = std::find_if(
@@ -415,23 +394,23 @@ public:
     void
     json_to_wire(Json::Value const &json, wire::message &wire)
     {
-        protobuf_ptr pbuf{
-            pb_json_codec.typed_json_to_protobuf(json)};
+        lock_type lock{mutex};
+        protobuf_ptr pbuf{pb_json_codec.typed_json_to_protobuf(json)};
         pb_wire_codec.protobuf_to_wire(*pbuf, wire);
     }
 
     void
     wire_to_json(wire::message const &wire, Json::Value &json)
     {
-        protobuf_ptr pbuf{
-            pb_wire_codec.wire_to_protobuf(wire)};
+        lock_type lock{mutex};
+        protobuf_ptr pbuf{pb_wire_codec.wire_to_protobuf(wire)};
         json = pb_json_codec.protobuf_to_typed_json(*pbuf);
     }
 
 private:
 
-    typedef std::unique_ptr<protobuf::pb::Message> protobuf_ptr;
-    typedef boost::unique_lock<boost::recursive_mutex> lock_type;
+    using protobuf_ptr = std::unique_ptr<protobuf::pb::Message>;
+    using lock_type = boost::unique_lock<boost::recursive_mutex>;
 
     boost::recursive_mutex mutex;
 
@@ -440,8 +419,8 @@ private:
     protobuf::wire_codec pb_wire_codec;
     protobuf::json_codec pb_json_codec;
 
-    async_executor enumeration_executor;
-    std::map<device_path_type, async_executor> device_executors;
+    utils::async_executor enumeration_executor;
+    std::map<device_path_type, utils::async_executor> device_executors;
     std::map<device_path_type, device_kernel> device_kernels;
     std::map<device_path_type, session_id_type> sessions;
     boost::uuids::random_generator uuid_generator;

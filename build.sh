@@ -6,7 +6,7 @@ cd $(dirname $0)
 
 TARGET=$1
 BUILDDIR=build${TARGET:+-$TARGET}
-BUILDTYPE=Release
+BUILDTYPE=Debug
 
 case "$TARGET" in
   lin32 | lin64 | win32 | win64 ) # cross build
@@ -16,16 +16,6 @@ case "$TARGET" in
     JOBS="-j 4"
     ;;
 esac
-
-# Compile cpp-netlib
-if [ \! -d $BUILDDIR/lib/cpp-netlib ]; then
-  mkdir -p $BUILDDIR/lib/cpp-netlib && cd $BUILDDIR/lib/cpp-netlib
-  cmake -DCPP-NETLIB_BUILD_TESTS=off \
-        -DCPP-NETLIB_BUILD_EXAMPLES=off \
-        -DCMAKE_BUILD_TYPE=$BUILDTYPE $PLATFORM_FILE ../../../vendor/cpp-netlib
-  make $JOBS
-  cd ../../..
-fi
 
 # Compile jsoncpp
 if [ \! -d $BUILDDIR/lib/jsoncpp ]; then

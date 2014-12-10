@@ -10,9 +10,14 @@ file (STRINGS "VERSION" VERSION)
 
 option(BUILD_TESTS "Build tests?" off)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
+
 # dynamic libs
 if (APPLE)
   find_package(OpenSSL REQUIRED)
+  find_package(GnuTLS REQUIRED)
+  find_package(Gcrypt REQUIRED)
+  find_package(CURL REQUIRED)
 endif(APPLE)
 
 # use static libs only
@@ -23,7 +28,9 @@ include_directories(src)
 
 set (SRCS
   src/main.cpp
-  src/api.hpp
+  src/http_api.hpp
+  src/http_server.hpp
+  src/http_client.hpp
   src/core.hpp
   src/wire.hpp
   src/utils.hpp
@@ -45,18 +52,17 @@ add_executable(trezord ${SRCS})
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -DVERSION='\"${VERSION}\"'")
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-  "${CMAKE_SOURCE_DIR}/cmake/modules"
-  "${CMAKE_BINARY_DIR}/lib/cpp-netlib")
-
 set(Boost_USE_STATIC_LIBS on)
 find_package(Boost 1.53.0 REQUIRED regex thread system unit_test_framework program_options)
 if (NOT APPLE) # dynamic lib on apple
   find_package(OpenSSL REQUIRED)
+  find_package(GnuTLS REQUIRED)
+  find_package(Gcrypt REQUIRED)
+  find_package(CURL REQUIRED)
 endif(NOT APPLE)
 find_package(Protobuf 2.5.0 REQUIRED)
-find_package(cppnetlib REQUIRED)
 find_package(jsoncpp REQUIRED)
+find_package(libmicrohttpd REQUIRED)
 
 add_subdirectory(vendor/hidapi)
 
@@ -65,8 +71,9 @@ add_subdirectory(vendor/trezor-crypto)
 include_directories(
   ${Boost_INCLUDE_DIRS}
   ${PROTOBUF_INCLUDE_DIRS}
-  ${CPPNETLIB_INCLUDE_DIRS}
   ${JSONCPP_INCLUDE_DIRS}
+  ${LIBMICROHTTPD_INCLUDE_DIRS}
+  ${CURL_INCLUDE_DIRS}
   vendor/hidapi/hidapi
   vendor/trezor-crypto
   vendor/easyloggingpp)
@@ -84,9 +91,12 @@ endif(WIN32)
 target_link_libraries(trezord
   ${Boost_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${GNUTLS_LIBRARIES}
+  ${GCRYPT_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
-  ${CPPNETLIB_LIBRARIES}
   ${JSONCPP_LIBRARIES}
+  ${LIBMICROHTTPD_LIBRARIES}
+  ${CURL_LIBRARIES}
   ${OS_LIBRARIES}
   hidapi
   TrezorCrypto)

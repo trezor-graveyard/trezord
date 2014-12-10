@@ -21,13 +21,10 @@
 #include <unistd.h>
 #endif
 
-#include <boost/asio.hpp>
-#include <boost/thread.hpp>
+#include <stdio.h>
+
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/program_options.hpp>
-
-#define BOOST_NETWORK_ENABLE_HTTPS 1
-#include <boost/network/include/http/client.hpp>
 
 #define _ELPP_THREAD_SAFE 1
 #define _ELPP_FORCE_USE_STD_THREAD 1
@@ -38,11 +35,13 @@
 #include "utils.hpp"
 #include "wire.hpp"
 #include "core.hpp"
-#include "api.hpp"
+#include "http_client.hpp"
+#include "http_server.hpp"
+#include "http_api.hpp"
 
 _INITIALIZE_EASYLOGGINGPP
 
-static const auto server_port = "21324";
+static const auto server_port = 21324;
 static const auto server_address = "127.0.0.1";
 
 static const auto https_cert_uri = "https://mytrezor.com/data/bridge/cert/server.crt";
@@ -51,180 +50,109 @@ static const auto https_privkey_uri = "https://mytrezor.com/data/bridge/cert/ser
 static const auto sleep_time = boost::posix_time::seconds(10);
 
 std::string
-get_log_path()
+get_default_log_path()
 {
 #ifdef _WIN32
-
-    auto app_data = getenv("APPDATA");
-    if (!app_data) {
-        throw std::runtime_error{"env var APPDATA not found"};
+    if (auto app_data = std::getenv("APPDATA")) {
+        return std::string{app_data} + "\\TREZOR Bridge\\trezord.log";
     }
-    return std::string{app_data} + "\\TREZOR Bridge\\trezord.log";
-
-#endif
-#ifdef __APPLE__
-
-    auto home = getenv("HOME");
-    if (!home) {
-        throw std::runtime_error("env var HOME not found");
+    else {
+        throw std::runtime_error{"environment variable APPDATA not found"};
     }
-    return std::string{home} + "/Library/Logs/trezord.log";
-
-#endif
-
+#elif __APPLE__
+    if (auto home = std::getenv("HOME")) {
+        return std::string{home} + "/Library/Logs/trezord.log";
+    }
+    else {
+        throw std::runtime_error{"environment variable HOME not found"};
+    }
+#else
     return "/var/log/trezord.log";
+#endif
 }
 
 void
 configure_logging()
 {
-    el::Loggers::getLogger("http");
-    el::Loggers::getLogger("http.body");
-    el::Loggers::getLogger("http.cors");
+    const auto default_log_path = get_default_log_path();
+    const auto default_format = "%datetime %level [%logger] [%thread] %msg";
+    const auto max_log_file_size = "2097152"; // 2mb, log gets truncated after that
 
+    el::Configurations cfg;
+    cfg.setToDefault();
+    cfg.setGlobally(el::ConfigurationType::MaxLogFileSize, max_log_file_size);
+    cfg.setGlobally(el::ConfigurationType::Filename, default_log_path);
+    cfg.setGlobally(el::ConfigurationType::Format, default_format);
+    cfg.set(el::Level::Debug, el::ConfigurationType::Format, default_format);
+    cfg.set(el::Level::Trace, el::ConfigurationType::Format, default_format);
+    cfg.set(el::Level::Verbose, el::ConfigurationType::Format, default_format);
+
+    // we need to explicitly construct all loggers used in the app
+    // easylogging++ prints warnings if we dont
+    el::Loggers::getLogger("http.client");
+    el::Loggers::getLogger("http.server");
     el::Loggers::getLogger("core.device");
     el::Loggers::getLogger("core.config");
     el::Loggers::getLogger("core.kernel");
-
     el::Loggers::getLogger("wire.enumerate");
 
-    el::Configurations config;
-
-    config.setToDefault();
-    config.setGlobally(
-        el::ConfigurationType::Filename,
-        get_log_path());
-    config.setGlobally(
-        el::ConfigurationType::MaxLogFileSize,
-        "2097152"); // 2 MB
-    config.setGlobally(
-        el::ConfigurationType::Format,
-        "%datetime %level [%logger] [%thread] %msg");
-    config.set(
-        el::Level::Debug,
-        el::ConfigurationType::Format,
-        "%datetime %level [%logger] [%thread] %msg");
-    config.set(
-        el::Level::Trace,
-        el::ConfigurationType::Format,
-        "%datetime %level [%logger] [%thread] %msg");
-    config.set(
-        el::Level::Verbose,
-        el::ConfigurationType::Format,
-        "%datetime %level-%vlevel [%logger] [%thread] %msg");
-
-    el::Loggers::reconfigureAllLoggers(config);
-}
-
-template <typename Server>
-void
-shutdown_server(boost::system::error_code const &error,
-                int signal,
-                Server &server)
-{
-    if (!error) {
-        LOG(INFO) << "signal: " << signal << ", stopping server";
-        server.stop();
-    }
-}
-
-std::string
-download_uri(const std::string &uri)
-{
-    using namespace boost::network;
-
-    http::client::options options;
-    http::client client{options.follow_redirects(true)};
-    http::client::request request{uri};
-
-    LOG(INFO) << "requesting " << uri;
-    http::client::response response = client.get(request);
-    LOG(INFO) << "response " << int(status(response));
-
-    if (status(response) != 200) {
-        throw std::runtime_error{"request failed"};
-    }
-    return body(response);
+    // configure all created loggers
+    el::Loggers::reconfigureAllLoggers(cfg);
 }
 
 void
-configure_https(boost::asio::ssl::context &context)
+start_server(std::string const &cert_uri,
+             std::string const &privkey_uri,
+             std::string const &address,
+             unsigned int port)
 {
-    auto privkey = download_uri(https_privkey_uri);
-    auto cert_chain = download_uri(https_cert_uri);
-
-    context.set_options(boost::asio::ssl::context::default_workarounds);
-    context.set_verify_mode(boost::asio::ssl::verify_none);
-    context.use_private_key(
-        boost::asio::buffer(privkey),
-        boost::asio::ssl::context::pem);
-    context.use_certificate_chain(
-        boost::asio::buffer(cert_chain));
-}
-
-void
-start_server()
-{
-    using namespace boost;
     using namespace trezord;
 
-    using server_type = api::connection_handler::server;
+    auto cert = http_client::request_uri_to_string(cert_uri);
+    auto privkey = http_client::request_uri_to_string(privkey_uri);
 
-    trezord::core::kernel kernel;
+    std::unique_ptr<
+        core::kernel> kernel{new core::kernel};
+    http_api::handler handler{std::move(kernel)};
 
-    // http handlers
-    api::request_handler<server_type> request_handler{kernel};
-    api::connection_handler connection_handler{request_handler};
+    using std::bind;
+    using std::placeholders::_1;
+    using http_api::handler;
 
-    // thread group
-    auto threads = make_shared<thread_group>();
+    http_server::route_table routes = {
+        {{"GET",  "/"},             bind(&handler::handle_index, &handler, _1) },
+        {{"GET",  "/listen"},       bind(&handler::handle_listen, &handler, _1) },
+        {{"GET",  "/enumerate"},    bind(&handler::handle_enumerate, &handler, _1) },
+        {{"POST", "/configure"},    bind(&handler::handle_configure, &handler, _1) },
+        {{"POST", "/acquire/(.+)"}, bind(&handler::handle_acquire, &handler, _1) },
+        {{"POST", "/release/(.+)"}, bind(&handler::handle_release, &handler, _1) },
+        {{"POST", "/call/(.+)"},    bind(&handler::handle_call, &handler, _1) },
+        {{".*",   ".*"},            bind(&handler::handle_404, &handler, _1) }
+    };
 
-    // io service
-    auto io_service = make_shared<asio::io_service>();
-    auto io_work = make_shared<asio::io_service::work>(boost::ref(*io_service));
-    threads->create_thread(bind(&asio::io_service::run, io_service));
-    threads->create_thread(bind(&asio::io_service::run, io_service));
+    http_server::cors_validator validator = [&] (char const *origin) {
+        return handler.is_origin_allowed(origin);
+    };
 
-    // thread pool
-    auto thread_pool = make_shared<network::utils::thread_pool>(2);
+    http_server::server server{routes, validator};
 
-    // https
-    auto context = make_shared<boost::asio::ssl::context>(
-        boost::asio::ssl::context::sslv23);
-    configure_https(*context);
+    server.start(port, address.c_str(), privkey.c_str(), cert.c_str());
 
-    // server
-    server_type::options options{connection_handler};
-    server_type server{
-        options
-            .reuse_address(true)
-            .io_service(io_service)
-            .thread_pool(thread_pool)
-            .address(server_address)
-            .port(server_port)
-            .context(context)};
-
-    // signal handling for clear shutdown
-    asio::signal_set signals{boost::ref(*io_service), SIGINT, SIGTERM};
-    signals.async_wait(
-        bind(&shutdown_server<server_type>, _1, _2, boost::ref(server)));
-
-    // start the server
-    LOG(INFO) << "starting server";
-    server.run();
-
-    // server has finished now
-    LOG(INFO) << "server finished running";
+    LOG(INFO) << "server started...";
+    getchar();
+    server.stop();
 }
 
 int
 main(int argc, char *argv[])
 {
+    configure_logging();
+
     namespace po = boost::program_options;
     po::options_description desc("Options");
     desc.add_options()
-       ("foreground,f", "run in foreground, don't fork into background")
-       ("help,h", "produce help message")
+        ("foreground,f", "run in foreground, don't fork into background")
+        ("help,h", "produce help message")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -235,33 +163,28 @@ main(int argc, char *argv[])
         return 1;
     }
 
-    _START_EASYLOGGINGPP(argc, argv);
-    configure_logging();
-
 #ifdef __linux__
     if (!vm.count("foreground")) {
         if (daemon(0, 0) < 0) {
             LOG(ERROR) << "could not daemonize";
-            exit(1);
+            return 1;
         }
     }
 #endif
 
-    bool restart_server = false;
-
-    do {
-        try {
-            start_server();
-            restart_server = false;
-        }
-        catch (std::exception const &e) {
-            LOG(ERROR) << e.what();
-            LOG(INFO) << "sleeping for " << sleep_time;
-            boost::this_thread::sleep(sleep_time);
-            restart_server = true;
-        }
+start:
+    try {
+        start_server(https_cert_uri,
+                     https_privkey_uri,
+                     server_address,
+                     server_port);
     }
-    while (restart_server);
+    catch (std::exception const &e) {
+        LOG(ERROR) << e.what();
+        LOG(INFO) << "sleeping for " << sleep_time;
+        boost::this_thread::sleep(sleep_time);
+        goto start;
+    }
 
     return 0;
 }

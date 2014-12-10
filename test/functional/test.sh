@@ -3,7 +3,7 @@
 set -e
 set -x
 
-url=https://localhost:21324
+url=https://127.0.0.1:21324
 
 device_index=${1-0}
 
