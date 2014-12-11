@@ -68,8 +68,6 @@ template <typename F>
 device_info_list
 enumerate_connected_devices(F filter)
 {
-    CLOG(INFO, "wire.enumerate") << "enumerating";
-
     unique_hid_lock lock{hid_mutex};
     device_info_list list;
     auto *infos = hid_enumerate(0x00, 0x00);

@@ -113,6 +113,7 @@ start_server(std::string const &cert_uri,
 
     std::unique_ptr<
         core::kernel> kernel{new core::kernel};
+
     http_api::handler handler{std::move(kernel)};
 
     using std::bind;
@@ -137,9 +138,7 @@ start_server(std::string const &cert_uri,
     http_server::server server{routes, validator};
 
     server.start(port, address.c_str(), privkey.c_str(), cert.c_str());
-
-    LOG(INFO) << "server started...";
-    getchar();
+    std::getchar();
     server.stop();
 }
 
