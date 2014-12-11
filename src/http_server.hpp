@@ -152,6 +152,7 @@ handle_cors_and_delegate(cors_validator validator,
         auto req_headers = request.get_header("Access-Control-Request-Headers");
         response.add_header("Access-Control-Allow-Methods", req_method);
         response.add_header("Access-Control-Allow-Headers", req_headers);
+        response.add_header("Access-Control-Allow-Origin", origin);
         return response;
     }
     else {
