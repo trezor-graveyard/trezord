@@ -49,3 +49,6 @@ RUN yum install -y /mingw32-protobuf*.rpm /mingw64-protobuf*.rpm
 # install dependencies for Windows packaging
 
 RUN yum install -y osslsigncode mingw32-nsis
+
+RUN yum install -y gnutls-devel libgcrypt-devel libcurl-devel libmicrohttpd-devel
+RUN yum install -y gnutls-devel.i686 libgcrypt-devel.i686 libcurl-devel.i686 libmicrohttpd-devel.i686

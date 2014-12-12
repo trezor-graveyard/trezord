@@ -10,20 +10,6 @@ file (STRINGS "VERSION" VERSION)
 
 option(BUILD_TESTS "Build tests?" off)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
-
-# dynamic libs
-if (APPLE)
-  find_package(OpenSSL REQUIRED)
-  find_package(GnuTLS REQUIRED)
-  find_package(Gcrypt REQUIRED)
-  find_package(CURL REQUIRED)
-endif(APPLE)
-
-# use static libs only
-set(BUILD_SHARED_LIBS off)
-set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-
 include_directories(src)
 
 set (SRCS
@@ -50,29 +36,36 @@ endif(UNIX AND NOT APPLE)
 
 add_executable(trezord ${SRCS})
 
+# use c++11, add version macro
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -DVERSION='\"${VERSION}\"'")
 
+# use vendored cmake modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
+
+# add dynamic libs
+find_package(OpenSSL REQUIRED)
+find_package(libmicrohttpd REQUIRED)
+find_package(GnuTLS REQUIRED)
+find_package(Gcrypt REQUIRED)
+find_package(CURL REQUIRED)
+
+# add static libs
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+set(BUILD_SHARED_LIBS off)
 set(Boost_USE_STATIC_LIBS on)
 find_package(Boost 1.53.0 REQUIRED regex thread system unit_test_framework program_options)
-if (NOT APPLE) # dynamic lib on apple
-  find_package(OpenSSL REQUIRED)
-  find_package(GnuTLS REQUIRED)
-  find_package(Gcrypt REQUIRED)
-  find_package(CURL REQUIRED)
-endif(NOT APPLE)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(jsoncpp REQUIRED)
-find_package(libmicrohttpd REQUIRED)
 
+# add vendored libs
 add_subdirectory(vendor/hidapi)
-
 add_subdirectory(vendor/trezor-crypto)
 
 include_directories(
   ${Boost_INCLUDE_DIRS}
+  ${LIBMICROHTTPD_INCLUDE_DIRS}
   ${PROTOBUF_INCLUDE_DIRS}
   ${JSONCPP_INCLUDE_DIRS}
-  ${LIBMICROHTTPD_INCLUDE_DIRS}
   ${CURL_INCLUDE_DIRS}
   vendor/hidapi/hidapi
   vendor/trezor-crypto
@@ -93,9 +86,9 @@ target_link_libraries(trezord
   ${OPENSSL_LIBRARIES}
   ${GNUTLS_LIBRARIES}
   ${GCRYPT_LIBRARIES}
+  ${LIBMICROHTTPD_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
   ${JSONCPP_LIBRARIES}
-  ${LIBMICROHTTPD_LIBRARIES}
   ${CURL_LIBRARIES}
   ${OS_LIBRARIES}
   hidapi
