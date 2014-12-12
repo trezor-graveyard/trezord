@@ -108,34 +108,28 @@ start_server(std::string const &cert_uri,
 {
     using namespace trezord;
 
-    auto cert = http_client::request_uri_to_string(cert_uri);
-    auto privkey = http_client::request_uri_to_string(privkey_uri);
-
-    std::unique_ptr<
-        core::kernel> kernel{new core::kernel};
-
-    http_api::handler handler{std::move(kernel)};
-
     using std::bind;
     using std::placeholders::_1;
     using http_api::handler;
 
-    http_server::route_table routes = {
-        {{"GET",  "/"},             bind(&handler::handle_index, &handler, _1) },
-        {{"GET",  "/listen"},       bind(&handler::handle_listen, &handler, _1) },
-        {{"GET",  "/enumerate"},    bind(&handler::handle_enumerate, &handler, _1) },
-        {{"POST", "/configure"},    bind(&handler::handle_configure, &handler, _1) },
-        {{"POST", "/acquire/(.+)"}, bind(&handler::handle_acquire, &handler, _1) },
-        {{"POST", "/release/(.+)"}, bind(&handler::handle_release, &handler, _1) },
-        {{"POST", "/call/(.+)"},    bind(&handler::handle_call, &handler, _1) },
-        {{".*",   ".*"},            bind(&handler::handle_404, &handler, _1) }
-    };
+    auto cert = http_client::request_uri_to_string(cert_uri);
+    auto privkey = http_client::request_uri_to_string(privkey_uri);
 
-    http_server::cors_validator validator = [&] (char const *origin) {
-        return handler.is_origin_allowed(origin);
+    http_api::handler api_handler{
+        std::unique_ptr<core::kernel>{new core::kernel}};
+    http_server::route_table api_routes = {
+        {{"GET",  "/"},             bind(&handler::handle_index, &api_handler, _1) },
+        {{"GET",  "/listen"},       bind(&handler::handle_listen, &api_handler, _1) },
+        {{"GET",  "/enumerate"},    bind(&handler::handle_enumerate, &api_handler, _1) },
+        {{"POST", "/configure"},    bind(&handler::handle_configure, &api_handler, _1) },
+        {{"POST", "/acquire/(.+)"}, bind(&handler::handle_acquire, &api_handler, _1) },
+        {{"POST", "/release/(.+)"}, bind(&handler::handle_release, &api_handler, _1) },
+        {{"POST", "/call/(.+)"},    bind(&handler::handle_call, &api_handler, _1) },
+        {{".*",   ".*"},            bind(&handler::handle_404, &api_handler, _1) }
     };
-
-    http_server::server server{routes, validator};
+    http_server::server server{api_routes, [&] (char const *origin) {
+            return api_handler.is_origin_allowed(origin);
+        }};
 
     server.start(port, address.c_str(), privkey.c_str(), cert.c_str());
     std::getchar();
