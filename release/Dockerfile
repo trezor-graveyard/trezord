@@ -1,6 +1,6 @@
 # initialize from the image
 
-FROM fedora:20
+FROM fedora:21
 
 # update package repositories
 
@@ -36,15 +36,12 @@ RUN gem install fpm --no-document
 
 # install dependencies for Windows build
 
-RUN yum install -y mingw32-boost-static mingw32-openssl-static mingw32-zlib-static
-RUN yum install -y mingw64-boost-static mingw64-openssl-static mingw64-zlib-static
+RUN yum install -y mingw32-boost-static mingw32-openssl-static mingw32-winpthreads-static mingw32-zlib-static
+RUN yum install -y mingw64-boost-static mingw64-openssl-static mingw64-winpthreads-static mingw64-zlib-static
 
-COPY windows/mingw32-protobuf-2.5.0-9.fc20.noarch.rpm /
-COPY windows/mingw32-protobuf-static-2.5.0-9.fc20.noarch.rpm /
-COPY windows/mingw64-protobuf-2.5.0-9.fc20.noarch.rpm /
-COPY windows/mingw64-protobuf-static-2.5.0-9.fc20.noarch.rpm /
+RUN wget https://copr-be.cloud.fedoraproject.org/results/prusnak/private/fedora-21-x86_64/mingw-protobuf-2.5.0-9/mingw{32,64}-protobuf{,-static}-2.5.0-9.fc21.noarch.rpm
 
-RUN yum install -y /mingw32-protobuf*.rpm /mingw64-protobuf*.rpm
+RUN yum install -y mingw{32,64}-protobuf{,-static}-2.5.0-9.fc21.noarch.rpm
 
 # install dependencies for Windows packaging
 
