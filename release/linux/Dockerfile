@@ -7,9 +7,10 @@ FROM fedora:21
 RUN yum install -y deltarpm yum-plugin-fastestmirror
 RUN yum update -y
 
-# install development tools
+# install tools
 
-RUN yum install -y cmake gcc gcc-c++ git make patchutils pkgconfig wget
+RUN yum install -y cmake make wget
+RUN yum install -y gcc gcc-c++ git make patchutils pkgconfig wget
 
 # install dependencies for Linux build
 
@@ -33,19 +34,6 @@ RUN rm -f $( rpm -ql protobuf-devel | grep \.so$ )
 
 RUN yum install -y ruby-devel rubygems rpm-build
 RUN gem install fpm --no-document
-
-# install dependencies for Windows build
-
-RUN yum install -y mingw32-boost-static mingw32-openssl-static mingw32-winpthreads-static mingw32-zlib-static
-RUN yum install -y mingw64-boost-static mingw64-openssl-static mingw64-winpthreads-static mingw64-zlib-static
-
-RUN wget https://copr-be.cloud.fedoraproject.org/results/prusnak/private/fedora-21-x86_64/mingw-protobuf-2.5.0-9/mingw{32,64}-protobuf{,-static}-2.5.0-9.fc21.noarch.rpm
-
-RUN yum install -y mingw{32,64}-protobuf{,-static}-2.5.0-9.fc21.noarch.rpm
-
-# install dependencies for Windows packaging
-
-RUN yum install -y osslsigncode mingw32-nsis
 
 RUN yum install -y gnutls-devel libgcrypt-devel libcurl-devel libmicrohttpd-devel
 RUN yum install -y gnutls-devel.i686 libgcrypt-devel.i686 libcurl-devel.i686 libmicrohttpd-devel.i686
