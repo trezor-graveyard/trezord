@@ -73,6 +73,7 @@ include_directories(
 
 if (WIN32)
   set(OS_LIBRARIES wsock32 ws2_32 z)
+  add_definitions(-D_WIN32_WINNT=0x6000)
 else(WIN32)
   if (APPLE)
     set(OS_LIBRARIES pthread)
