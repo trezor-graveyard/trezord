@@ -46,7 +46,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 find_package(OpenSSL REQUIRED)
 find_package(libmicrohttpd REQUIRED)
 find_package(GnuTLS REQUIRED)
-find_package(Gcrypt REQUIRED)
+find_package(GCrypt REQUIRED)
 find_package(CURL REQUIRED)
 
 # add static libs
@@ -78,7 +78,7 @@ else(WIN32)
   if (APPLE)
     set(OS_LIBRARIES pthread)
   else(APPLE)
-    set(OS_LIBRARIES pthread krb5 k5crypto dl z)
+    set(OS_LIBRARIES pthread)
   endif(APPLE)
 endif(WIN32)
 
@@ -95,8 +95,8 @@ target_link_libraries(trezord
   hidapi
   TrezorCrypto)
 
-set_target_properties(trezord PROPERTIES LINK_SEARCH_START_STATIC 1)
-set_target_properties(trezord PROPERTIES LINK_SEARCH_END_STATIC 1)
+# set_target_properties(trezord PROPERTIES LINK_SEARCH_START_STATIC 1)
+# set_target_properties(trezord PROPERTIES LINK_SEARCH_END_STATIC 1)
 
 if(BUILD_TESTS)
 
