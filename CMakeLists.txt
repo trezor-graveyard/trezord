@@ -42,18 +42,32 @@ set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -DVERSION='\"${VERSION}\"'")
 # use vendored cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
+if (WIN32)
+  set(OS_LIBRARIES wsock32 ws2_32 z)
+  add_definitions(-D_WIN32_WINNT=0x6000)
+else(WIN32)
+  if (APPLE)
+    set(OS_LIBRARIES pthread)
+  else(APPLE)
+    set(OS_LIBRARIES pthread dl z)
+  endif(APPLE)
+endif(WIN32)
+
+target_link_libraries(trezord ${OS_LIBRARIES})
+
 # add dynamic libs
-find_package(OpenSSL REQUIRED)
-find_package(libmicrohttpd REQUIRED)
 find_package(GnuTLS REQUIRED)
 find_package(GCrypt REQUIRED)
 find_package(CURL REQUIRED)
+find_package(libmicrohttpd REQUIRED)
 
 # add static libs
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 set(BUILD_SHARED_LIBS off)
 set(Boost_USE_STATIC_LIBS on)
+set(CMAKE_FIND_STATIC FIRST)
 find_package(Boost 1.53.0 REQUIRED regex thread system unit_test_framework program_options)
+find_package(OpenSSL REQUIRED)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(jsoncpp REQUIRED)
 
@@ -71,27 +85,15 @@ include_directories(
   vendor/trezor-crypto
   vendor/easyloggingpp)
 
-if (WIN32)
-  set(OS_LIBRARIES wsock32 ws2_32 z)
-  add_definitions(-D_WIN32_WINNT=0x6000)
-else(WIN32)
-  if (APPLE)
-    set(OS_LIBRARIES pthread)
-  else(APPLE)
-    set(OS_LIBRARIES pthread)
-  endif(APPLE)
-endif(WIN32)
-
 target_link_libraries(trezord
   ${Boost_LIBRARIES}
+  ${LIBMICROHTTPD_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CURL_LIBRARIES}
   ${GNUTLS_LIBRARIES}
   ${GCRYPT_LIBRARIES}
-  ${LIBMICROHTTPD_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
   ${JSONCPP_LIBRARIES}
-  ${CURL_LIBRARIES}
-  ${OS_LIBRARIES}
   hidapi
   TrezorCrypto)
 
