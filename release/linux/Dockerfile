@@ -19,11 +19,11 @@ RUN gem install fpm --no-document
 
 # install dependencies for Linux build
 
-RUN yum install -y glibc-devel glibc-static libgcc libstdc++-static zlib
-RUN yum install -y boost-static libusbx-devel openssl-static protobuf-static
+RUN yum install -y glibc-devel glibc-static libgcc libstdc++-static zlib-devel
+RUN yum install -y boost-static libusbx-devel protobuf-static
 
-RUN yum install -y glibc-devel.i686 glibc-static.i686 libgcc.i686 libstdc++-static.i686 zlib.i686
-RUN yum install -y boost-static.i686 libusbx-devel.i686 openssl-static.i686 protobuf-static.i686
+RUN yum install -y glibc-devel.i686 glibc-static.i686 libgcc.i686 libstdc++-static.i686 zlib-devel.i686
+RUN yum install -y boost-static.i686 libusbx-devel.i686 protobuf-static.i686
 
 # protobuf-static does not install protobuf-devel, workaround
 

@@ -21,22 +21,31 @@ rm -f *.deb *.rpm *.tar.bz2
 tar cfj $NAME-$VERSION.tar.bz2 ./etc ./usr
 
 for TYPE in "deb" "rpm"; do
-	if [ $TARGET = "lin64" ]; then
-		if [ $TYPE = "deb" ]; then
+	case "$TARGET-$TYPE" in
+		lin32-deb)
+			ARCH=i386
+			DEPS="-d libcurl3 -d libgcrypt20 -d libgnutls28 -d libmicrohttpd10 -d libusb-1.0-0"
+			;;
+		lin64-deb)
 			ARCH=amd64
-		else
+			DEPS="-d libcurl3 -d libgcrypt20 -d libgnutls28 -d libmicrohttpd10 -d libusb-1.0-0"
+			;;
+		lin32-rpm)
+			ARCH=i386
+			DEPS="-d libcurl.so.4 -d libgcrypt.so.20 -d libgnutls.so.28 -d libmicrohttpd.so.10 -d libusb-1.0.so.0"
+			;;
+		lin64-rpm)
 			ARCH=x86_64
-		fi
-	else
-		ARCH=i386
-	fi
+			DEPS="-d libcurl.so.4()(64bit) -d libgcrypt.so.20()(64bit) -d libgnutls.so.28()(64bit) -d libmicrohttpd.so.10()(64bit) -d libusb-1.0.so.0()(64bit)"
+			;;
+	esac
 	fpm \
 		-s tar \
 		-t $TYPE \
 		-a $ARCH \
 		-n $NAME \
 		-v $VERSION \
-		--license "GPL-3.0" \
+		--license "LGPL-3.0" \
 		--vendor "SatoshiLabs" \
 		--maintainer "stick@satoshilabs.com" \
 		--url "http://bitcointrezor.com/" \
@@ -44,6 +53,7 @@ for TYPE in "deb" "rpm"; do
 		--before-install ../release/linux/fpm.before-install.sh \
 		--after-install ../release/linux/fpm.after-install.sh \
 		--before-remove ../release/linux/fpm.before-remove.sh \
+		$DEPS \
 		$NAME-$VERSION.tar.bz2
 done
 

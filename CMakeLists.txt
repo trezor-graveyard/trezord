@@ -67,7 +67,6 @@ set(BUILD_SHARED_LIBS off)
 set(Boost_USE_STATIC_LIBS on)
 set(CMAKE_FIND_STATIC FIRST)
 find_package(Boost 1.53.0 REQUIRED regex thread system unit_test_framework program_options)
-find_package(OpenSSL REQUIRED)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(jsoncpp REQUIRED)
 
@@ -88,7 +87,6 @@ include_directories(
 target_link_libraries(trezord
   ${Boost_LIBRARIES}
   ${LIBMICROHTTPD_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
   ${CURL_LIBRARIES}
   ${GNUTLS_LIBRARIES}
   ${GCRYPT_LIBRARIES}
@@ -96,9 +94,6 @@ target_link_libraries(trezord
   ${JSONCPP_LIBRARIES}
   hidapi
   TrezorCrypto)
-
-# set_target_properties(trezord PROPERTIES LINK_SEARCH_START_STATIC 1)
-# set_target_properties(trezord PROPERTIES LINK_SEARCH_END_STATIC 1)
 
 if(BUILD_TESTS)
 
