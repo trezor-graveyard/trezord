@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/chrono/chrono.hpp>
 #include <boost/program_options.hpp>
 
 #define _ELPP_THREAD_SAFE 1
@@ -47,7 +47,7 @@ static const auto server_address = "127.0.0.1";
 static const auto https_cert_uri = "https://mytrezor.com/data/bridge/cert/server.crt";
 static const auto https_privkey_uri = "https://mytrezor.com/data/bridge/cert/server.key";
 
-static const auto sleep_time = boost::posix_time::seconds(10);
+static const auto sleep_time = boost::chrono::seconds(10);
 
 std::string
 get_default_log_path()
@@ -133,7 +133,7 @@ start_server(std::string const &cert_uri,
 
     server.start(port, address.c_str(), privkey.c_str(), cert.c_str());
     for (;;) {
-        boost::this_thread::sleep(sleep_time);
+        boost::this_thread::sleep_for(sleep_time);
     }
     server.stop();
 }
@@ -176,8 +176,8 @@ start:
     }
     catch (std::exception const &e) {
         LOG(ERROR) << e.what();
-        LOG(INFO) << "sleeping for " << sleep_time;
-        boost::this_thread::sleep(sleep_time);
+        LOG(INFO) << "sleeping for " << sleep_time.count() << "s";
+        boost::this_thread::sleep_for(sleep_time);
         goto start;
     }
 
