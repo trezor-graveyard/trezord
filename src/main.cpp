@@ -132,7 +132,9 @@ start_server(std::string const &cert_uri,
         }};
 
     server.start(port, address.c_str(), privkey.c_str(), cert.c_str());
-    std::getchar();
+    for (;;) {
+        boost::this_thread::sleep(sleep_time);
+    }
     server.stop();
 }
 
