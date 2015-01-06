@@ -205,6 +205,7 @@ struct server
             MHD_OPTION_HTTPS_MEM_CERT, cert,
             MHD_OPTION_NOTIFY_COMPLETED, &server::completed_callback, this,
             MHD_OPTION_EXTERNAL_LOGGER, &server::log_callback, this,
+            MHD_OPTION_CONNECTION_TIMEOUT, 0,
             MHD_OPTION_END);
 
         if (daemon) {
@@ -318,7 +319,6 @@ private:
         CLOG(INFO, "http.server") << message;
     }
 };
-
 
 }
 }
