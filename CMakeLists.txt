@@ -56,8 +56,6 @@ endif(WIN32)
 target_link_libraries(trezord ${OS_LIBRARIES})
 
 # add dynamic libs
-find_package(GnuTLS REQUIRED)
-find_package(GCrypt REQUIRED)
 find_package(CURL REQUIRED)
 find_package(libmicrohttpd REQUIRED)
 
@@ -88,8 +86,6 @@ target_link_libraries(trezord
   ${Boost_LIBRARIES}
   ${LIBMICROHTTPD_LIBRARIES}
   ${CURL_LIBRARIES}
-  ${GNUTLS_LIBRARIES}
-  ${GCRYPT_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
   ${JSONCPP_LIBRARIES}
   hidapi

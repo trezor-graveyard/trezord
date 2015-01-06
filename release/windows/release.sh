@@ -13,6 +13,38 @@ INSTALLER=trezor-bridge-$VERSION-$TARGET-install.exe
 cd ../../$BUILDDIR
 
 cp ../release/windows/trezord.nsis trezord.nsis
+for i in \
+	iconv.dll \
+	libcrypto-10.dll \
+	libcurl-4.dll \
+	libffi-6.dll \
+	libgcc_s_sjlj-1.dll \
+	libgcrypt-20.dll \
+	libgmp-10.dll \
+	libgnutls-28.dll \
+	libgpg-error-0.dll \
+	libhogweed-2-5.dll \
+	libidn-11.dll \
+	libintl-8.dll \
+	libmicrohttpd-10.dll \
+	libnettle-4-7.dll \
+	libp11-kit-0.dll \
+	libssh2-1.dll \
+	libssl-10.dll \
+	libstdc++-6.dll \
+	libtasn1-6.dll \
+	libwinpthread-1.dll \
+	zlib1.dll \
+; do
+  if [ $TARGET = win32 ]; then
+    cp /usr/i686-w64-mingw32/sys-root/mingw/bin/$i .
+  else
+    cp /usr/x86_64-w64-mingw32/sys-root/mingw/bin/$i .
+  fi
+done
+
+mingw-strip *.dll *.exe
+
 if [ $TARGET = win32 ]; then
   makensis -X"OutFile $INSTALLER" -X'InstallDir "$PROGRAMFILES32\TREZOR Bridge"' trezord.nsis
 else

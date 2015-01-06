@@ -15,10 +15,9 @@ RUN yum install -y osslsigncode mingw32-nsis
 # install dependencies for Windows build
 
 RUN yum install -y mingw32-boost-static
-RUN yum install -y mingw32-curl-static
-RUN yum install -y mingw32-libgcrypt-static
-RUN yum install -y mingw32-libmicrohttpd-static
-RUN yum install -y mingw32-winpthreads-static
+RUN yum install -y mingw32-curl
+RUN yum install -y mingw32-libmicrohttpd
+RUN yum install -y mingw32-winpthreads
 RUN yum install -y mingw32-zlib-static
 # RUN yum install -y mingw64-*
 
