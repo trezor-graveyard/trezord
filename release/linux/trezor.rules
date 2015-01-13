@@ -1,5 +1,6 @@
 # TREZOR: The Hardware Bitcoin Wallet
 # http://bitcointrezor.com/
+# Put this file to /lib/udev/rules.d/
 
 # TREZOR
 SUBSYSTEM=="usb", ATTR{idVendor}=="534c", ATTR{idProduct}=="0001", TAG+="uaccess", TAG+="udev-acl", SYMLINK+="trezor%n"
