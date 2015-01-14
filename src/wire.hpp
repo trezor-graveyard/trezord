@@ -49,7 +49,6 @@ struct device_info
 {
     std::uint16_t vendor_id;
     std::uint16_t product_id;
-    std::wstring serial_number;
     std::string path;
 
     bool
@@ -57,7 +56,6 @@ struct device_info
     {
         return (vendor_id == rhs.vendor_id)
             && (product_id == rhs.product_id)
-            && (serial_number == rhs.serial_number)
             && (path == rhs.path);
     }
 };
@@ -74,9 +72,7 @@ enumerate_connected_devices(F filter)
 
     for (auto i = infos; i != nullptr; i = i->next) {
         // skip interfaces known to be foreign
-        // skip "phantom" devices appearing on linux
-        if ((i->interface_number > 0) ||
-            (i->product_string == nullptr)) {
+        if (i->interface_number > 0) {
             CLOG(DEBUG, "wire.enumerate") << "skipping, invalid device";
             continue;
         }
@@ -87,7 +83,6 @@ enumerate_connected_devices(F filter)
             device_info{
                 i->vendor_id,
                 i->product_id,
-                i->serial_number,
                 i->path});
     }
 

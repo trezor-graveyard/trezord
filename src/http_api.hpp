@@ -130,9 +130,6 @@ devices_to_json(core::kernel::device_enumeration_type const &devices)
         item["path"] = encode_device_path(i.path);
         item["vendor"] = i.vendor_id;
         item["product"] = i.product_id;
-        item["serialNumber"] = std::string{
-            i.serial_number.begin(),
-            i.serial_number.end()};
         item["session"] = s.empty() ? nil : s;
         list.append(item);
     }
