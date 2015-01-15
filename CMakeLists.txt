@@ -64,7 +64,7 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 set(BUILD_SHARED_LIBS off)
 set(Boost_USE_STATIC_LIBS on)
 set(CMAKE_FIND_STATIC FIRST)
-find_package(Boost 1.53.0 REQUIRED regex thread system unit_test_framework program_options)
+find_package(Boost 1.53.0 REQUIRED regex thread system unit_test_framework program_options chrono)
 find_package(Protobuf 2.5.0 REQUIRED)
 find_package(jsoncpp REQUIRED)
 
