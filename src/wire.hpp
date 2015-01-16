@@ -71,12 +71,13 @@ enumerate_connected_devices(F filter)
     auto *infos = hid_enumerate(0x00, 0x00);
 
     for (auto i = infos; i != nullptr; i = i->next) {
-        // skip interfaces known to be foreign
-        if (i->interface_number > 0) {
-            CLOG(DEBUG, "wire.enumerate") << "skipping, invalid device";
+        // skip unsupported devices
+        if (!filter(i)) {
             continue;
         }
-        if (!filter(i)) {
+        // skip foreign interfaces
+        if (i->interface_number > 0) {
+            CLOG(DEBUG, "wire.enumerate") << "skipping, invalid device";
             continue;
         }
         list.emplace_back(
