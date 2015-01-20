@@ -49,6 +49,7 @@ request_uri_to_stream(std::string const &uri,
 
     CLOG(INFO, "http.client") << "requesting " << uri;
 
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
     curl_easy_setopt(curl, CURLOPT_URL, uri.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_stream);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, stream);

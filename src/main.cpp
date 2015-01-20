@@ -143,6 +143,11 @@ main(int argc, char *argv[])
 {
     configure_logging();
 
+    if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
+        LOG(ERROR) << "could not init curl";
+        return 1;
+    }
+
     namespace po = boost::program_options;
     po::options_description desc("Options");
     desc.add_options()
