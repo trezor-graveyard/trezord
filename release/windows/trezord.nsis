@@ -1,3 +1,5 @@
+!include MUI2.nsh
+
 SetCompressor bzip2
 
 Name "TREZOR Bridge"
@@ -62,3 +64,12 @@ SectionEnd
 Section -post
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 SectionEnd
+
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_TEXT "Start TREZOR Bridge"
+!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchApplication"
+!insertmacro MUI_PAGE_FINISH
+
+Function LaunchApplication
+  ExecShell "" "$INSTDIR\trezord.exe"
+FunctionEnd
