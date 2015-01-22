@@ -16,15 +16,14 @@ RUN yum install -y osslsigncode mingw32-nsis
 
 RUN yum install -y mingw32-boost-static
 RUN yum install -y mingw32-curl
-RUN yum install -y mingw32-libmicrohttpd
+# RUN yum install -y mingw32-libmicrohttpd # version 0.9.34 contains bug, use 0.9.39 instead
 RUN yum install -y mingw32-winpthreads
 RUN yum install -y mingw32-zlib-static
-# RUN yum install -y mingw64-*
 
 # install dependencies from COPR
 
 RUN wget https://copr-be.cloud.fedoraproject.org/results/prusnak/private/fedora-21-x86_64/mingw-protobuf-2.5.0-9/mingw32-protobuf{,-static}-2.5.0-9.fc21.noarch.rpm
-# RUN wget https://copr-be.cloud.fedoraproject.org/results/prusnak/private/fedora-21-x86_64/mingw-protobuf-2.5.0-9/mingw64-protobuf{,-static}-2.5.0-9.fc21.noarch.rpm
+RUN wget https://copr-be.cloud.fedoraproject.org/results/prusnak/private/fedora-21-x86_64/mingw-libmicrohttpd-0.9.39-1/mingw32-libmicrohttpd-0.9.39-1.fc21.noarch.rpm
 
 RUN yum install -y mingw32-protobuf{,-static}-2.5.0-9.fc21.noarch.rpm
-# RUN yum install -y mingw64-protobuf{,-static}-2.5.0-9.fc21.noarch.rpm
+RUN yum install -y mingw32-libmicrohttpd-0.9.39-1.fc21.noarch.rpm
