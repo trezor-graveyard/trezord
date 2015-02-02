@@ -11,12 +11,11 @@
     <key>RunAtLoad</key>
     <true/>
 
-    <key>EnableGlobbing</key>
-    <true/>
-
     <key>ProgramArguments</key>
     <array>
-      <string>~/Applications/Utilities/TREZOR Bridge/trezord</string>
+      <string>sh</string>
+      <string>-c</string>
+      <string>~/Applications/Utilities/TREZOR\ Bridge/trezord</string>
     </array>
   </dict>
 </plist>

@@ -34,6 +34,11 @@ if (UNIX AND NOT APPLE)
   set (SRCS src/glibc_compat.c ${SRCS})
 endif(UNIX AND NOT APPLE)
 
+if (APPLE)
+  include_directories("/opt/local/include")
+  link_directories("/opt/local/lib")
+endif(APPLE)
+
 add_executable(trezord ${SRCS})
 
 # use c++11, add version macro
