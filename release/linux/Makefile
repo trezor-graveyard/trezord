@@ -12,7 +12,7 @@ all: .package
 
 .binary: .docker-image
 	$(info Building in docker ...)
-	docker run -t $(VOL_MOUNT) $(IMAGETAG) /trezord-src/build.sh $(TARGET)
+	docker run -t $(VOL_MOUNT) $(IMAGETAG) /trezord-src/build.sh $(TARGET) Release
 
 .docker-image:
 	$(info Preparing docker image ...)

@@ -6,7 +6,7 @@ cd $(dirname $0)
 
 TARGET=$1
 BUILDDIR=build${TARGET:+-$TARGET}
-BUILDTYPE=Debug
+BUILDTYPE=${2-Debug}
 
 case "$TARGET" in
   lin32 | lin64 | win32 | win64 ) # cross build
