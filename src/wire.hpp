@@ -17,8 +17,6 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <hidapi.h>
-
 #ifdef _WIN32
 #include <winsock2.h>
 #else
@@ -36,14 +34,6 @@ namespace trezord
 {
 namespace wire
 {
-
-// Mutex used to tip-toe around various hidapi bugs, mostly on
-// linux. Enumerate acquires an exclusive lock, while
-// open/close/read/write use shared locks.
-static boost::shared_mutex hid_mutex;
-
-using shared_hid_lock = boost::shared_lock<boost::shared_mutex>;
-using unique_hid_lock = boost::unique_lock<boost::shared_mutex>;
 
 struct device_info
 {
@@ -66,9 +56,8 @@ template <typename F>
 device_info_list
 enumerate_connected_devices(F filter)
 {
-    unique_hid_lock lock{hid_mutex};
     device_info_list list;
-    auto *infos = hid_enumerate(0x00, 0x00);
+    auto *infos = hid::enumerate(0x00, 0x00);
 
     for (auto i = infos; i != nullptr; i = i->next) {
         // skip unsupported devices
@@ -87,7 +76,7 @@ enumerate_connected_devices(F filter)
                 i->path});
     }
 
-    hid_free_enumeration(infos);
+    hid::free_enumeration(infos);
     return list;
 }
 
@@ -113,20 +102,18 @@ struct device
 
     device(char const *path)
     {
-        shared_hid_lock lock{hid_mutex};
-
-        hid = hid_open_path(path);
+        hid = hid::open_path(path);
         if (!hid) {
             throw open_error("HID device open failed");
         }
 
         unsigned char uart[] = {0x41, 0x01}; // enable UART
         unsigned char txrx[] = {0x43, 0x03}; // purge TX/RX FIFOs
-        hid_send_feature_report(hid, uart, 2);
-        hid_send_feature_report(hid, txrx, 2);
+        hid::send_feature_report(hid, uart, 2);
+        hid::send_feature_report(hid, txrx, 2);
     }
 
-    ~device() { hid_close(hid); }
+    ~device() { hid::close(hid); }
 
     void
     read_buffered(char_type *data,
@@ -175,10 +162,7 @@ private:
         using namespace std;
 
         report_type report;
-        int r = [&] {
-            shared_hid_lock lock{hid_mutex};
-            return hid_read(hid, report.data(), report.size());
-        }();
+        int r = hid::read(hid, report.data(), report.size());
 
         if (r < 0) {
             throw read_error("HID device read failed");
@@ -207,10 +191,7 @@ private:
         size_type n = min(report.size() - 1, len);
         copy(data, data + n, report.begin() + 1); // copy behind report number
 
-        int r = [&]{
-            shared_hid_lock lock{hid_mutex};
-            return hid_write(hid, report.data(), report.size());
-        }();
+        int r = hid::write(hid, report.data(), report.size());
 
         if (r < 0) {
             throw write_error{"HID device write failed"};

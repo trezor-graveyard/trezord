@@ -190,7 +190,14 @@ public:
         : pb_state{},
           pb_wire_codec{pb_state},
           pb_json_codec{pb_state}
-    {}
+    {
+        hid::init();
+    }
+
+    ~kernel()
+    {
+        hid::exit();
+    }
 
     std::string
     get_version()
@@ -229,12 +236,6 @@ public:
 
     // device enumeration
 
-    utils::async_executor *
-    get_enumeration_executor()
-    {
-        return &enumeration_executor;
-    }
-
     device_enumeration_type
     enumerate_devices()
     {
@@ -258,19 +259,7 @@ public:
         return list;
     }
 
-    bool
-    is_path_supported(device_path_type const &device_path)
-    {
-        auto devices = enumerate_devices();
-        return std::any_of(
-            devices.begin(),
-            devices.end(),
-            [&] (decltype(devices)::value_type const &i) {
-                return i.first.path == device_path;
-            });
-    }
-
-    // device kernels and executors
+    // device kernels
 
     device_kernel *
     get_device_kernel(device_path_type const &device_path)
@@ -312,46 +301,6 @@ public:
         return get_device_kernel(session_it->first);
     }
 
-    utils::async_executor *
-    get_device_executor(device_path_type const &device_path)
-    {
-        lock_type lock{mutex};
-
-        if (!has_config()) {
-            throw missing_config{"not configured"};
-        }
-
-        auto executor_r = device_executors.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(device_path),
-            std::forward_as_tuple());
-
-        return &executor_r.first->second;
-    }
-
-    utils::async_executor *
-    get_device_executor_by_session_id(session_id_type const &session_id)
-    {
-        lock_type lock{mutex};
-
-        if (!has_config()) {
-            throw missing_config("not configured");
-        }
-
-        auto session_it = std::find_if(
-            sessions.begin(),
-            sessions.end(),
-            [&] (decltype(sessions)::value_type const &kv) {
-                return kv.second == session_id;
-            });
-
-        if (session_it == sessions.end()) {
-            throw unknown_session{"session not found"};
-        }
-
-        return get_device_executor(session_it->first);
-    }
-
     // session management
 
     session_id_type
@@ -389,6 +338,22 @@ public:
         }
     }
 
+    session_id_type
+    open_and_acquire_session(device_path_type const &device_path)
+    {
+        lock_type lock{mutex};
+        get_device_kernel(device_path)->open();
+        return acquire_session(device_path);
+    }
+
+    void
+    close_and_release_session(session_id_type const &session_id)
+    {
+        lock_type lock{mutex};
+        get_device_kernel_by_session_id(session_id)->close();
+        release_session(session_id);
+    }
+
     // protobuf <-> json codec
 
     void
@@ -419,15 +384,15 @@ private:
     protobuf::wire_codec pb_wire_codec;
     protobuf::json_codec pb_json_codec;
 
-    utils::async_executor enumeration_executor;
-    std::map<device_path_type, utils::async_executor> device_executors;
     std::map<device_path_type, device_kernel> device_kernels;
     std::map<device_path_type, session_id_type> sessions;
     boost::uuids::random_generator uuid_generator;
 
     session_id_type
     generate_session_id()
-    { return boost::lexical_cast<session_id_type>(uuid_generator()); }
+    {
+        return boost::lexical_cast<session_id_type>(uuid_generator());
+    }
 
     wire::device_info_list
     enumerate_supported_devices()

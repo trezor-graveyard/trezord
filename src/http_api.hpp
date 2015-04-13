@@ -224,15 +224,10 @@ struct handler
         static const auto iter_delay = boost::posix_time::milliseconds(500);
 
         try {
-            auto executor = kernel->get_enumeration_executor();
-            auto devices = executor->add([=] {
-                    return kernel->enumerate_devices();
-                }).get();
+            auto devices = kernel->enumerate_devices();
 
             for (int i = 0; i < iter_max; i++) {
-                auto updated_devices = executor->add([=] {
-                        return kernel->enumerate_devices();
-                    }).get();
+                auto updated_devices = kernel->enumerate_devices();
 
                 if (updated_devices == devices) {
                     boost::this_thread::sleep(iter_delay);
@@ -254,10 +249,7 @@ struct handler
     handle_enumerate(http_server::request_data const &request)
     {
         try {
-            auto devices = kernel->get_enumeration_executor()->add([=] {
-                    return kernel->enumerate_devices();
-                }).get();
-
+            auto devices = kernel->enumerate_devices();
             return json_response(200, devices_to_json(devices));
         }
         catch (...) {
@@ -270,19 +262,7 @@ struct handler
     {
         try {
             auto device_path = decode_device_path(request.url_params.str(1));
-
-            auto supported = kernel->get_enumeration_executor()->add([=] {
-                    return kernel->is_path_supported(device_path);
-                }).get();
-            if (!supported) {
-                throw response_error{404, "device not found or unsupported"};
-            }
-
-            auto session_id = kernel->get_device_executor(device_path)->add([=] {
-                    kernel->get_device_kernel(device_path)->open();
-                    return kernel->acquire_session(device_path);
-                }).get();
-
+            auto session_id = kernel->open_and_acquire_session(device_path);
             return json_response(200, {{"session", session_id}});
         }
         catch (...) {
@@ -295,23 +275,12 @@ struct handler
     {
         try {
             auto session_id = request.url_params.str(1);
-
-            core::device_kernel *device;
-            utils::async_executor *executor;
-
             try {
-                device = kernel->get_device_kernel_by_session_id(session_id);
-                executor = kernel->get_device_executor_by_session_id(session_id);
+                kernel->close_and_release_session(session_id);
             }
             catch (core::kernel::unknown_session const &e) {
                 throw response_error{404, e.what()};
             }
-
-            executor->add([=] {
-                    device->close();
-                    kernel->release_session(session_id);
-                }).get();
-
             return json_response(200, {});
         }
         catch (...) {
@@ -326,31 +295,24 @@ struct handler
             auto session_id = request.url_params.str(1);
             auto body = request.body.str();
 
-            core::device_kernel *device;
-            utils::async_executor *executor;
+            Json::Value json_message;
+            Json::Reader json_reader;
+            json_reader.parse(body, json_message);
 
+            wire::message wire_in;
+            wire::message wire_out;
+
+            core::device_kernel *device;
             try {
                 device = kernel->get_device_kernel_by_session_id(session_id);
-                executor = kernel->get_device_executor_by_session_id(session_id);
             }
             catch (core::kernel::unknown_session const &e) {
                 throw response_error{404, e.what()};
             }
 
-            auto json_message = executor->add([=] {
-                    wire::message wire_in;
-                    wire::message wire_out;
-
-                    Json::Value json;
-                    Json::Reader json_reader;
-                    json_reader.parse(body, json);
-
-                    kernel->json_to_wire(json, wire_in);
-                    device->call(wire_in, wire_out);
-                    kernel->wire_to_json(wire_out, json);
-
-                    return json;
-                }).get();
+            kernel->json_to_wire(json_message, wire_in);
+            device->call(wire_in, wire_out);
+            kernel->wire_to_json(wire_out, json_message);
 
             return json_response(200, json_message);
         }

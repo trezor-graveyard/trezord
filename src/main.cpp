@@ -33,6 +33,7 @@
 #include <easylogging++.h>
 
 #include "utils.hpp"
+#include "hid.hpp"
 #include "wire.hpp"
 #include "core.hpp"
 #include "http_client.hpp"

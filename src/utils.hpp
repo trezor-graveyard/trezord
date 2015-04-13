@@ -88,6 +88,13 @@ struct async_executor
         return std::move(future);
     }
 
+    template<typename Callable>
+    typename std::result_of<Callable()>::type
+    await(Callable callable)
+    {
+        return add(callable).get();
+    }
+
 private:
 
     void
