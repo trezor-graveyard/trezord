@@ -49,7 +49,7 @@ for TYPE in "deb" "rpm"; do
 		-v $VERSION \
 		--license "LGPL-3.0" \
 		--vendor "SatoshiLabs" \
-		--maintainer "stick@satoshilabs.com" \
+		--maintainer "SatoshiLabs <stick@satoshilabs.com>" \
 		--url "http://bitcointrezor.com/" \
 		--category "Productivity/Security" \
 		--before-install ../release/linux/fpm.before-install.sh \
