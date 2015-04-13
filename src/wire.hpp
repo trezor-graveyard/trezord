@@ -162,7 +162,11 @@ private:
         using namespace std;
 
         report_type report;
-        int r = hid::read(hid, report.data(), report.size());
+        int r;
+
+        do {
+            r = hid::read_timeout(hid, report.data(), report.size(), 50);
+        } while (r == 0);
 
         if (r < 0) {
             throw read_error("HID device read failed");
