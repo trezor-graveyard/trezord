@@ -4,3 +4,6 @@
 [submodule "vendor/trezor-crypto"]
 	path = vendor/trezor-crypto
 	url = https://github.com/trezor/trezor-crypto.git
+[submodule "vendor/macdylibbundler"]
+	path = vendor/macdylibbundler
+	url = https://github.com/jpochyla/macdylibbundler.git
