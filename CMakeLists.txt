@@ -60,12 +60,12 @@ find_package(CURL REQUIRED)
 find_package(libmicrohttpd REQUIRED)
 
 # add static libs
-if (not ${CMAKE_SYSTEM_NAME} matches "Darwin")
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
   set(BUILD_SHARED_LIBS off)
   set(Boost_USE_STATIC_LIBS on)
   set(CMAKE_FIND_STATIC FIRST)
-endif(not ${CMAKE_SYSTEM_NAME} matches "Darwin")
+endif(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 find_package(Boost 1.53.0 REQUIRED
   regex thread system unit_test_framework program_options chrono)
 find_package(Protobuf 2.5.0 REQUIRED)
