@@ -13,6 +13,7 @@
 
 NAME=trezord
 DAEMON=/usr/bin/trezord
+USER=trezord
 
 test -x $DAEMON || exit 5
 
@@ -23,7 +24,7 @@ case $1 in
       log_warning_msg "$NAME already running"
       exit
     fi
-    if $DAEMON > /dev/null ; then
+    if su - $USER -s /bin/sh -c $DAEMON > /dev/null ; then
       log_success_msg "$NAME started"
     else
       log_failure_msg "$NAME start failed"

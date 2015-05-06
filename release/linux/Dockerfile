@@ -32,4 +32,4 @@ RUN yum install -y protobuf-devel
 # install used networking libraries
 
 RUN yum install -y libcurl-devel libmicrohttpd-devel
-RUN yum install -y libcurl-devel.i686 libmicrohttpd-devel.i686
+RUN yum install -y libcurl.i686 libcurl-devel.i686 libmicrohttpd.i686 libmicrohttpd-devel.i686

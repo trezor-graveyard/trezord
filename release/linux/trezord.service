@@ -5,6 +5,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/trezord -f
+User=trezord
 
 [Install]
 WantedBy=multi-user.target
