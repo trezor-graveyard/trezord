@@ -15,7 +15,7 @@
     <array>
       <string>sh</string>
       <string>-c</string>
-      <string>~/Applications/Utilities/TREZOR\ Bridge/trezord</string>
+      <string>/Applications/Utilities/TREZOR\ Bridge/trezord</string>
     </array>
   </dict>
 </plist>

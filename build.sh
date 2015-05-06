@@ -9,7 +9,7 @@ BUILDDIR=build${TARGET:+-$TARGET}
 BUILDTYPE=${2-Debug}
 
 case "$TARGET" in
-  lin32 | lin64 | win32 | win64 | mac ) # cross build
+  lin32 | lin64 | win32 | win64 | mac64 ) # cross build
     PLATFORM_FILE="-C $(pwd)/cmake/Platform-$TARGET.cmake"
     ;;
   * ) # native build
