@@ -8,9 +8,6 @@
     <key>KeepAlive</key>
     <true/>
 
-    <key>RunAtLoad</key>
-    <true/>
-
     <key>ProgramArguments</key>
     <array>
       <string>sh</string>
