@@ -8,7 +8,3 @@ if [ -f $agent_file ]; then
     launchctl unload $agent_file
 fi
 launchctl load $agent_file
-
-# open myTREZOR in the default browser
-
-open https://mytrezor.com
