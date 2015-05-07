@@ -95,7 +95,7 @@ private:
     mhd_response_from_string(char const *body)
     {
         // MHD_creae_response_from_buffer has many modes of operation,
-        // but the buffer for MHD_RESPMEM_MUST_COPY modes is effectively
+        // but the buffer for MHD_RESPMEM_MUST_COPY mode is effectively
         // const char *, so this conversion is safe
         auto body_buffer = static_cast<void *>(const_cast<char *>(body));
 
@@ -105,10 +105,6 @@ private:
 };
 
 using request_handler = std::function<response_data (request_data const &)>;
-
-/**
- * Router
- */
 
 struct regex_route
 {
