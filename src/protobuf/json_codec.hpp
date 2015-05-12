@@ -37,7 +37,7 @@ namespace pb = google::protobuf;
 
 struct json_codec
 {
-    json_codec(state &s)
+    json_codec(state *s)
         : protobuf_state(s)
     {}
 
@@ -60,13 +60,13 @@ struct json_codec
             throw std::invalid_argument("expecting JSON string");
         }
 
-        auto descriptor = protobuf_state.descriptor_pool
+        auto descriptor = protobuf_state->descriptor_pool
             .FindMessageTypeByName(name.asString());
         if (!descriptor) {
             throw std::invalid_argument("unknown message");
         }
 
-        auto prototype = protobuf_state.message_factory
+        auto prototype = protobuf_state->message_factory
             .GetPrototype(descriptor);
 
         pb::Message *msg = prototype->New();
@@ -76,7 +76,7 @@ struct json_codec
 
 private:
 
-    state &protobuf_state;
+    state *protobuf_state;
 
     Json::Value
     protobuf_to_json(pb::Message const &msg)
@@ -329,7 +329,7 @@ private:
         }
 
         case pb::FieldDescriptor::TYPE_MESSAGE: {
-            auto mf = &protobuf_state.message_factory;
+            auto mf = &protobuf_state->message_factory;
             auto fm = ref.MutableMessage(&msg, &fd, mf);
             json_to_protobuf(val, *fm);
             break;
@@ -415,7 +415,7 @@ private:
         }
 
         case pb::FieldDescriptor::TYPE_MESSAGE: {
-            auto mf = &protobuf_state.message_factory;
+            auto mf = &protobuf_state->message_factory;
             auto fm = ref.AddMessage(&msg, &fd, mf);
             json_to_protobuf(val, *fm);
             break;

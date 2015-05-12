@@ -34,7 +34,7 @@ struct wire_codec
     typedef pb::Message *pbuf_type_ptr;
     typedef wire::message wire_type;
 
-    wire_codec(state &s)
+    wire_codec(state *s)
         : protobuf_state(s)
     {}
 
@@ -44,7 +44,7 @@ struct wire_codec
         static const std::string enum_name = "MessageType";
         static const std::string enum_prefix = "MessageType_";
 
-        auto e = protobuf_state.descriptor_pool.FindEnumTypeByName(enum_name);
+        auto e = protobuf_state->descriptor_pool.FindEnumTypeByName(enum_name);
         if (!e) {
             throw std::invalid_argument("invalid file descriptor set");
         }
@@ -55,7 +55,7 @@ struct wire_codec
                 enum_prefix.size()); // skip prefix
 
             descriptor_index[ev->number()] =
-                protobuf_state.descriptor_pool.FindMessageTypeByName(name);
+                protobuf_state->descriptor_pool.FindMessageTypeByName(name);
         }
     }
 
@@ -63,7 +63,7 @@ struct wire_codec
     wire_to_protobuf(wire_type const &wire)
     {
         auto descriptor = descriptor_index.at(wire.id);
-        auto prototype = protobuf_state.message_factory
+        auto prototype = protobuf_state->message_factory
             .GetPrototype(descriptor);
 
         pbuf_type_ptr pbuf = prototype->New();
@@ -90,7 +90,7 @@ private:
         int, pb::Descriptor const *
     > id_map;
 
-    state &protobuf_state;
+    state *protobuf_state;
     id_map descriptor_index;
 
     int

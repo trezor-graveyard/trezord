@@ -187,9 +187,9 @@ struct kernel
 public:
 
     kernel()
-        : pb_state{},
-          pb_wire_codec{pb_state},
-          pb_json_codec{pb_state}
+        : pb_state{new protobuf::state{}},
+          pb_wire_codec{new protobuf::wire_codec{pb_state.get()}},
+          pb_json_codec{new protobuf::json_codec{pb_state.get()}}
     {
         hid::init();
     }
@@ -218,8 +218,13 @@ public:
 
         config = new_config;
 
-        pb_state.load_from_set(config.c.wire_protocol());
-        pb_wire_codec.load_protobuf_state();
+        pb_state.reset(new protobuf::state{});
+        pb_state->load_from_set(config.c.wire_protocol());
+
+        pb_wire_codec.reset(new protobuf::wire_codec{pb_state.get()});
+        pb_wire_codec->load_protobuf_state();
+
+        pb_json_codec.reset(new protobuf::json_codec{pb_state.get()});
     }
 
     bool
@@ -360,16 +365,16 @@ public:
     json_to_wire(Json::Value const &json, wire::message &wire)
     {
         lock_type lock{mutex};
-        protobuf_ptr pbuf{pb_json_codec.typed_json_to_protobuf(json)};
-        pb_wire_codec.protobuf_to_wire(*pbuf, wire);
+        protobuf_ptr pbuf{pb_json_codec->typed_json_to_protobuf(json)};
+        pb_wire_codec->protobuf_to_wire(*pbuf, wire);
     }
 
     void
     wire_to_json(wire::message const &wire, Json::Value &json)
     {
         lock_type lock{mutex};
-        protobuf_ptr pbuf{pb_wire_codec.wire_to_protobuf(wire)};
-        json = pb_json_codec.protobuf_to_typed_json(*pbuf);
+        protobuf_ptr pbuf{pb_wire_codec->wire_to_protobuf(wire)};
+        json = pb_json_codec->protobuf_to_typed_json(*pbuf);
     }
 
 private:
@@ -380,9 +385,9 @@ private:
     boost::recursive_mutex mutex;
 
     kernel_config config;
-    protobuf::state pb_state;
-    protobuf::wire_codec pb_wire_codec;
-    protobuf::json_codec pb_json_codec;
+    std::unique_ptr<protobuf::state> pb_state;
+    std::unique_ptr<protobuf::wire_codec> pb_wire_codec;
+    std::unique_ptr<protobuf::json_codec> pb_json_codec;
 
     std::map<device_path_type, device_kernel> device_kernels;
     std::map<device_path_type, session_id_type> sessions;
