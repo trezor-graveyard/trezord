@@ -23,6 +23,6 @@ make -C ../vendor/macdylibbundler
 
 x86_64-apple-darwin12-strip trezord
 
-# x86_64-apple-darwin12-ditto --arch x86_64 libs libs-x86_64
-# rm -rf libs
-# mv libs-x86_6a4 libs
+# fix libs permissions
+
+chmod a+r libs/*
