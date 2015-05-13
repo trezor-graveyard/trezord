@@ -1,5 +1,7 @@
 !include MUI2.nsh
 
+RequestExecutionLevel admin
+
 SetCompressor bzip2
 
 Name "TREZOR Bridge"
