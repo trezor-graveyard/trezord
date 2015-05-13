@@ -8,9 +8,6 @@
     <key>KeepAlive</key>
     <true/>
 
-    <key>UserName</key>
-    <string>_trezord</string>
-
     <key>ProgramArguments</key>
     <array>
       <string>sh</string>

@@ -1,21 +1,15 @@
 #!/bin/sh
 
-# add trezord user
+set -x
 
-dscl . -create /Users/_trezord
-dscl . -create /Users/_trezord UserShell /usr/bin/false
-dscl . -create /Users/_trezord PrimaryGroupID 20 # staff
-dscl . -create /Users/_trezord UniqueID 21324    # trezor product id
+# find out which user is running the installation
+inst_user=`who -m | cut -f 1 -d ' '`
 
-# create log directory
-
-install -o _trezord -g staff -d /var/log/trezord
-
-# load the agent file into launchd
+# load the agent file into launchd with correct user
 
 agent_file=/Library/LaunchAgents/com.bitcointrezor.trezorBridge.trezord.plist
 
 if [ -f $agent_file ]; then
-    launchctl unload $agent_file
+    sudo -u $inst_user launchctl unload $agent_file
 fi
-launchctl load $agent_file
+sudo -u $inst_user launchctl load $agent_file
