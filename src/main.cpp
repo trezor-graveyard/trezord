@@ -61,7 +61,12 @@ get_default_log_path()
         throw std::runtime_error{"environment variable APPDATA not found"};
     }
 #elif __APPLE__
-    return "/var/log/trezord/trezord.log";
+    if (auto home = std::getenv("HOME")) {
+        return std::string{home} + "/Library/Logs/trezord.log";
+    }
+    else {
+        throw std::runtime_error{"environment variable HOME not found"};
+    }
 #else
     return "/var/log/trezord.log";
 #endif
