@@ -18,7 +18,7 @@ case "$TARGET" in
 esac
 
 # Compile jsoncpp
-if [ \! -d $BUILDDIR/lib/jsoncpp ]; then
+if [ \! -f $BUILDDIR/lib/jsoncpp/lib/libjson.a ]; then
   mkdir -p $BUILDDIR/lib/jsoncpp && cd $BUILDDIR/lib/jsoncpp
   cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE $PLATFORM_FILE ../../../vendor/jsoncpp
   make $JOBS
