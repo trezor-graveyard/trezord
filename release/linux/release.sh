@@ -49,6 +49,7 @@ for TYPE in "deb" "rpm"; do
 		-v $VERSION \
 		--license "LGPL-3.0" \
 		--vendor "SatoshiLabs" \
+		--description "Communication daemon for TREZOR" \
 		--maintainer "SatoshiLabs <stick@satoshilabs.com>" \
 		--url "http://bitcointrezor.com/" \
 		--category "Productivity/Security" \
