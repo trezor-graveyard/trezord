@@ -119,12 +119,17 @@ struct device
     read_buffered(char_type *data,
                   size_type len)
     {
-        if (read_buffer.empty()) {
-            buffer_report();
-        }
-        size_type n = read_report_from_buffer(data, len);
-        if (n < len) {
-            read_buffered(data + n, len - n);
+        for (;;) {
+            if (read_buffer.empty()) {
+                buffer_report();
+            }
+            size_type n = read_report_from_buffer(data, len);
+            if (n < len) {
+                data += n;
+                len -= n;
+            } else {
+                break;
+            }
         }
     }
 
@@ -132,9 +137,14 @@ struct device
     write(char_type const *data,
           size_type len)
     {
-        size_type n = write_report(data, len);
-        if (n < len) {
-            write(data + n, len - n);
+        for (;;) {
+            size_type n = write_report(data, len);
+            if (n < len) {
+                data += n;
+                len -= n;
+            } else {
+                break;
+            }
         }
     }
 
