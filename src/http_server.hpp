@@ -241,7 +241,13 @@ private:
         request_data *request = static_cast<request_data *>(*con_cls);
 
         if (!request) {
-            request = new request_data{connection, url, method};
+            request = new request_data{
+                connection,
+                url,
+                method,
+                std::stringstream(),
+                boost::smatch()
+            };
             *con_cls = request;
             return MHD_YES;
         }
