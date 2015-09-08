@@ -490,6 +490,13 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 							cur_dev->next = NULL;
 							cur_dev->path = make_path(dev, interface_num);
 
+#ifdef GET_INFO_STRINGS
+							/* Lookup of device details like serial number and
+							 * manufacturer/product strings causes lock-ups in
+							 * highly concurrent conditions. Enable
+							 * GET_INFO_STRINGS to report back the string
+							 * details. */
+
 							res = libusb_open(dev, &handle);
 
 							if (res >= 0) {
@@ -571,6 +578,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 
 								libusb_close(handle);
 							}
+#endif /* GET_INFO_STRINGS */
 							/* VID/PID */
 							cur_dev->vendor_id = dev_vid;
 							cur_dev->product_id = dev_pid;
