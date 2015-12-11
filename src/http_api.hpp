@@ -137,6 +137,31 @@ devices_to_json(core::kernel::device_enumeration_type const &devices)
     return list;
 }
 
+const core::kernel::device_enumeration_type
+json_to_devices(std::string const &json_body)
+{
+    Json::Value json_message;
+    Json::Reader json_reader;
+    json_reader.parse(json_body, json_message);
+    core::kernel::device_enumeration_type list;
+    for (auto const &item: json_message) {
+        auto path = decode_device_path(item["path"].asString());
+        auto vendor = static_cast<std::uint16_t>(item["vendor"].asUInt());
+        auto product = static_cast<std::uint16_t>(item["product"].asUInt());
+
+        auto json_session = item["session"];
+        auto session = json_session.isNull() ? "" : json_session.asString();
+
+        auto device_info = wire::device_info{
+                vendor,
+                product,
+                path};
+
+        list.emplace_back(device_info, session);
+    }
+    return list;
+}
+
 /**
  * Request handlers
  */
@@ -224,7 +249,9 @@ struct handler
         static const auto iter_delay = boost::posix_time::milliseconds(500);
 
         try {
-            auto devices = kernel->enumerate_devices();
+            auto body = request.body.str();
+
+            auto devices = body.empty() ? kernel->enumerate_devices() : json_to_devices(body);
 
             for (int i = 0; i < iter_max; i++) {
                 auto updated_devices = kernel->enumerate_devices();
