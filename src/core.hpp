@@ -184,6 +184,10 @@ struct kernel
         : public std::invalid_argument
     { using std::invalid_argument::invalid_argument; };
 
+    struct wrong_previous_session
+        : public std::invalid_argument
+    { using std::invalid_argument::invalid_argument; };
+
 public:
 
     kernel()
@@ -241,6 +245,16 @@ public:
 
     // device enumeration
 
+    session_id_type
+    find_session_by_path(device_path_type const &path) {
+        auto it = sessions.find(path);
+        if (it != sessions.end()) {
+            return it->second;
+        } else {
+            return "";
+        }
+    }
+
     device_enumeration_type
     enumerate_devices()
     {
@@ -253,12 +267,8 @@ public:
         device_enumeration_type list;
 
         for (auto const &i: enumerate_supported_devices()) {
-            auto it = sessions.find(i.path);
-            if (it != sessions.end()) {
-                list.emplace_back(i, it->second);
-            } else {
-                list.emplace_back(i, "");
-            }
+            auto session_id = find_session_by_path(i.path);
+            list.emplace_back(i, session_id);
         }
 
         return list;
@@ -343,10 +353,23 @@ public:
         }
     }
 
+
     session_id_type
-    open_and_acquire_session(device_path_type const &device_path)
+    open_and_acquire_session(device_path_type const &device_path,
+                    session_id_type const &previous_id,
+                    bool check_previous)
     {
         lock_type lock{mutex};
+
+        auto real_previous_id = find_session_by_path(device_path);
+        if (check_previous && real_previous_id != previous_id) {
+            CLOG(INFO, "core.kernel") << "not acquiring session for: " << device_path << " , wrong previous";
+            throw wrong_previous_session{"wrong previous session"};
+        }
+        if (!(real_previous_id.empty())) {
+            close_and_release_session(real_previous_id);
+        }
+
         get_device_kernel(device_path)->open();
         return acquire_session(device_path);
     }

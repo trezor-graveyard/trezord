@@ -289,7 +289,13 @@ struct handler
     {
         try {
             auto device_path = decode_device_path(request.url_params.str(1));
-            auto session_id = kernel->open_and_acquire_session(device_path);
+
+            // slight hack to keep the types correct
+            auto check_previous = request.url_params.size() > 2;
+            auto previous_or_null = check_previous ? request.url_params.str(2) : "null";
+            auto previous = previous_or_null == "null" ? "" : previous_or_null;
+
+            auto session_id = kernel->open_and_acquire_session(device_path, previous, check_previous);
             return json_response(200, {{"session", session_id}});
         }
         catch (...) {
