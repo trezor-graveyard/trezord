@@ -1,6 +1,8 @@
 trezord
 =======
 
+[![Build Status](https://travis-ci.org/trezor/trezord.svg?branch=master)](https://travis-ci.org/trezor/trezord)
+
 TREZOR Communication Daemon aka TREZOR Bridge
 
 Checking out sources
