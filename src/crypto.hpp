@@ -23,6 +23,7 @@ extern "C++" {
 extern "C" {
 #endif
 #include <ecdsa.h>
+#include <secp256k1.h>
 }
 
 namespace trezord
@@ -38,7 +39,7 @@ verify_signature(std::uint8_t const *sig,
                  std::size_t keys_len)
 {
     for (std::size_t i = 0; i < keys_len; i++) {
-        int ret = ecdsa_verify(keys[i], sig, msg, msg_len);
+        int ret = ecdsa_verify(&secp256k1, keys[i], sig, msg, msg_len);
         if (ret == 0) {
             return true;
         }
