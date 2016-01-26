@@ -5,7 +5,7 @@ language: c
 addons:
   apt:
     packages:
-      - libboost-dev
+      - libboost-all-dev
       - libmicrohttpd-dev
       - libprotobuf-dev
       - libusb-1.0-0-dev
