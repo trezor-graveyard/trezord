@@ -9,6 +9,7 @@ addons:
       - libmicrohttpd-dev
       - libprotobuf-dev
       - libusb-1.0-0-dev
+      - g++-5
 
 script:
   - ./build.sh
