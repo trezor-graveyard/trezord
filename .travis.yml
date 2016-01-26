@@ -7,6 +7,9 @@ before_install:
   - sudo apt-get update -q
   - sudo apt-get install gcc-5 g++-5 -y
 
+install:
+  - export CXX="g++-5" CC="gcc-5"
+
 addons:
   apt:
     packages:
