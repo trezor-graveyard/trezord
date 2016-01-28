@@ -171,7 +171,7 @@ struct server
     cors_validator validator;
 
     server(route_table const &table, cors_validator cors)
-        : routes{table},
+        : routes(table),
           validator{cors}
     { }
 
