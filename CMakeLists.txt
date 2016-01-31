@@ -68,7 +68,7 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 find_package(Boost 1.53.0 REQUIRED
   regex thread system unit_test_framework program_options chrono)
-find_package(Protobuf 2.5.0 REQUIRED)
+find_package(Protobuf 2.6.1 REQUIRED)
 find_package(jsoncpp REQUIRED)
 
 # add vendored libs
