@@ -53,6 +53,8 @@ Section "Start Menu Shortcuts"
 SectionEnd
 
 Section "Uninstall"
+  ExecWait "taskkill /f /im trezord.exe"
+
   Delete /rebootok "$SMSTARTUP\TREZOR Bridge.lnk"
   Delete /rebootok "$SMPROGRAMS\TREZOR Bridge\TREZOR Bridge.lnk"
   Delete /rebootok "$SMPROGRAMS\TREZOR Bridge\Uninstall.lnk"
