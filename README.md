@@ -5,6 +5,11 @@ trezord
 
 TREZOR Communication Daemon aka TREZOR Bridge
 
+Download latest binary
+----
+
+Latest build packages are on https://mytrezor.s3.amazonaws.com/bridge/1.1.2/index.html
+
 Checking out sources
 --------------------
 
