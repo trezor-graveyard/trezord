@@ -1,12 +1,11 @@
-trezord
-=======
+# trezord
 
-[![Build Status](https://travis-ci.org/trezor/trezord.svg?branch=master)](https://travis-ci.org/trezor/trezord)
+[![Build Status](https://travis-ci.org/trezor/trezord.svg?branch=master)](https://travis-ci.org/trezor/trezord) [![gitter](https://badges.gitter.im/trezor/community.svg)](https://gitter.im/trezor/community)
 
 TREZOR Communication Daemon aka TREZOR Bridge
 
-What trezord does
-----
+## What trezord does
+
 `trezord` (short for TREZOR Daemon), or TREZOR Bridge, is a small piece of software, used for websites (such as our own webwallet [myTREZOR](https://mytrezor.com)), to talk with TREZOR devices.
 
 `trezord` starts a local webserver, with which both external applications and local applications can communicate. This webserver then communicates with TREZOR devices and returns their replies as JSON. `trezord` also manages access to devices - two applications cannot use the same device at the same time.
@@ -15,8 +14,8 @@ Communicating with devices using `trezord` is more high-level than communicating
 
 **For development of web apps for TREZOR, it is recommended to use [trezor.js](https://github.com/trezor/trezor.js) javascript API, which has separate javascript calls for most common usecases; or [TREZOR Connect](https://github.com/trezor/connect), which is even more high level.** (`trezor.js` communicates with `trezord` under the hood.)
 
-API documentation
-----
+## API documentation
+
 `trezord` starts server on `localhost`, with port `21324`. You can use `https`, by using `https://localback.net:21324` which redirects to localhost. You can call this web address with standard AJAX calls from websites (see the note about whitelisting).
 
 Server supports following API calls:
@@ -37,13 +36,11 @@ You cannot connect to `trezord` from anywhere on the internet. Your URL needs to
 
 `localhost` is specifically whitelisted, so you can experiment on `http://localhost`. If you want to add your url in order to make a TREZOR web app, [make a pull request to this file](https://github.com/trezor/trezor-common/blob/master/signer/config.json).
 
-Download latest binary
-----
+## Download latest binary
 
 Latest build packages are on https://mytrezor.s3.amazonaws.com/bridge/1.1.2/index.html
 
-Checking out sources
---------------------
+## Checking out sources
 
 ```
 git clone https://github.com/trezor/trezord.git
@@ -51,8 +48,7 @@ cd trezord
 git submodule update --init
 ```
 
-Building
---------
+## Building
 
 Run `build.sh` to build locally.
 
