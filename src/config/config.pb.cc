@@ -143,6 +143,7 @@ const int DeviceDescriptor::kPathFieldNumber;
 DeviceDescriptor::DeviceDescriptor()
   : ::google::protobuf::Message() {
   SharedCtor();
+  // @@protoc_insertion_point(constructor:DeviceDescriptor)
 }
 
 void DeviceDescriptor::InitAsDefaultInstance() {
@@ -152,26 +153,29 @@ DeviceDescriptor::DeviceDescriptor(const DeviceDescriptor& from)
   : ::google::protobuf::Message() {
   SharedCtor();
   MergeFrom(from);
+  // @@protoc_insertion_point(copy_constructor:DeviceDescriptor)
 }
 
 void DeviceDescriptor::SharedCtor() {
+  ::google::protobuf::internal::GetEmptyString();
   _cached_size_ = 0;
   vendor_id_ = 0u;
   product_id_ = 0u;
-  serial_number_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  serial_number_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
 DeviceDescriptor::~DeviceDescriptor() {
+  // @@protoc_insertion_point(destructor:DeviceDescriptor)
   SharedDtor();
 }
 
 void DeviceDescriptor::SharedDtor() {
-  if (serial_number_ != &::google::protobuf::internal::kEmptyString) {
+  if (serial_number_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     delete serial_number_;
   }
-  if (path_ != &::google::protobuf::internal::kEmptyString) {
+  if (path_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -200,40 +204,56 @@ DeviceDescriptor* DeviceDescriptor::New() const {
 }
 
 void DeviceDescriptor::Clear() {
-  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    vendor_id_ = 0u;
-    product_id_ = 0u;
+#define OFFSET_OF_FIELD_(f) (reinterpret_cast<char*>(      \
+  &reinterpret_cast<DeviceDescriptor*>(16)->f) - \
+   reinterpret_cast<char*>(16))
+
+#define ZR_(first, last) do {                              \
+    size_t f = OFFSET_OF_FIELD_(first);                    \
+    size_t n = OFFSET_OF_FIELD_(last) - f + sizeof(last);  \
+    ::memset(&first, 0, n);                                \
+  } while (0)
+
+  if (_has_bits_[0 / 32] & 15) {
+    ZR_(vendor_id_, product_id_);
     if (has_serial_number()) {
-      if (serial_number_ != &::google::protobuf::internal::kEmptyString) {
+      if (serial_number_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
         serial_number_->clear();
       }
     }
     if (has_path()) {
-      if (path_ != &::google::protobuf::internal::kEmptyString) {
+      if (path_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
         path_->clear();
       }
     }
   }
+
+#undef OFFSET_OF_FIELD_
+#undef ZR_
+
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
 }
 
 bool DeviceDescriptor::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  while ((tag = input->ReadTag()) != 0) {
+  // @@protoc_insertion_point(parse_start:DeviceDescriptor)
+  for (;;) {
+    ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoff(127);
+    tag = p.first;
+    if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
       // optional uint32 vendor_id = 1;
       case 1: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+        if (tag == 8) {
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
                  input, &vendor_id_)));
           set_has_vendor_id();
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
         if (input->ExpectTag(16)) goto parse_product_id;
         break;
@@ -241,15 +261,14 @@ bool DeviceDescriptor::MergePartialFromCodedStream(
 
       // optional uint32 product_id = 2;
       case 2: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+        if (tag == 16) {
          parse_product_id:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
                  input, &product_id_)));
           set_has_product_id();
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
         if (input->ExpectTag(26)) goto parse_serial_number;
         break;
@@ -257,16 +276,16 @@ bool DeviceDescriptor::MergePartialFromCodedStream(
 
       // optional string serial_number = 3;
       case 3: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+        if (tag == 26) {
          parse_serial_number:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_serial_number()));
-          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+          ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
             this->serial_number().data(), this->serial_number().length(),
-            ::google::protobuf::internal::WireFormat::PARSE);
+            ::google::protobuf::internal::WireFormat::PARSE,
+            "serial_number");
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
         if (input->ExpectTag(34)) goto parse_path;
         break;
@@ -274,26 +293,27 @@ bool DeviceDescriptor::MergePartialFromCodedStream(
 
       // optional string path = 4;
       case 4: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+        if (tag == 34) {
          parse_path:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_path()));
-          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+          ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
             this->path().data(), this->path().length(),
-            ::google::protobuf::internal::WireFormat::PARSE);
+            ::google::protobuf::internal::WireFormat::PARSE,
+            "path");
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
-        if (input->ExpectAtEnd()) return true;
+        if (input->ExpectAtEnd()) goto success;
         break;
       }
 
       default: {
-      handle_uninterpreted:
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+      handle_unusual:
+        if (tag == 0 ||
+            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
-          return true;
+          goto success;
         }
         DO_(::google::protobuf::internal::WireFormat::SkipField(
               input, tag, mutable_unknown_fields()));
@@ -301,12 +321,18 @@ bool DeviceDescriptor::MergePartialFromCodedStream(
       }
     }
   }
+success:
+  // @@protoc_insertion_point(parse_success:DeviceDescriptor)
   return true;
+failure:
+  // @@protoc_insertion_point(parse_failure:DeviceDescriptor)
+  return false;
 #undef DO_
 }
 
 void DeviceDescriptor::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
+  // @@protoc_insertion_point(serialize_start:DeviceDescriptor)
   // optional uint32 vendor_id = 1;
   if (has_vendor_id()) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(1, this->vendor_id(), output);
@@ -319,19 +345,21 @@ void DeviceDescriptor::SerializeWithCachedSizes(
 
   // optional string serial_number = 3;
   if (has_serial_number()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->serial_number().data(), this->serial_number().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
-    ::google::protobuf::internal::WireFormatLite::WriteString(
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "serial_number");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       3, this->serial_number(), output);
   }
 
   // optional string path = 4;
   if (has_path()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->path().data(), this->path().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
-    ::google::protobuf::internal::WireFormatLite::WriteString(
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "path");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       4, this->path(), output);
   }
 
@@ -339,10 +367,12 @@ void DeviceDescriptor::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
   }
+  // @@protoc_insertion_point(serialize_end:DeviceDescriptor)
 }
 
 ::google::protobuf::uint8* DeviceDescriptor::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
+  // @@protoc_insertion_point(serialize_to_array_start:DeviceDescriptor)
   // optional uint32 vendor_id = 1;
   if (has_vendor_id()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(1, this->vendor_id(), target);
@@ -355,9 +385,10 @@ void DeviceDescriptor::SerializeWithCachedSizes(
 
   // optional string serial_number = 3;
   if (has_serial_number()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->serial_number().data(), this->serial_number().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "serial_number");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         3, this->serial_number(), target);
@@ -365,9 +396,10 @@ void DeviceDescriptor::SerializeWithCachedSizes(
 
   // optional string path = 4;
   if (has_path()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->path().data(), this->path().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "path");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         4, this->path(), target);
@@ -377,6 +409,7 @@ void DeviceDescriptor::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
   }
+  // @@protoc_insertion_point(serialize_to_array_end:DeviceDescriptor)
   return target;
 }
 
@@ -506,6 +539,7 @@ const int Configuration::kValidUntilFieldNumber;
 Configuration::Configuration()
   : ::google::protobuf::Message() {
   SharedCtor();
+  // @@protoc_insertion_point(constructor:Configuration)
 }
 
 void Configuration::InitAsDefaultInstance() {
@@ -516,9 +550,11 @@ Configuration::Configuration(const Configuration& from)
   : ::google::protobuf::Message() {
   SharedCtor();
   MergeFrom(from);
+  // @@protoc_insertion_point(copy_constructor:Configuration)
 }
 
 void Configuration::SharedCtor() {
+  ::google::protobuf::internal::GetEmptyString();
   _cached_size_ = 0;
   wire_protocol_ = NULL;
   valid_until_ = 0u;
@@ -526,6 +562,7 @@ void Configuration::SharedCtor() {
 }
 
 Configuration::~Configuration() {
+  // @@protoc_insertion_point(destructor:Configuration)
   SharedDtor();
 }
 
@@ -557,7 +594,7 @@ Configuration* Configuration::New() const {
 }
 
 void Configuration::Clear() {
-  if (_has_bits_[2 / 32] & (0xffu << (2 % 32))) {
+  if (_has_bits_[0 / 32] & 20) {
     if (has_wire_protocol()) {
       if (wire_protocol_ != NULL) wire_protocol_->::google::protobuf::FileDescriptorSet::Clear();
     }
@@ -572,23 +609,27 @@ void Configuration::Clear() {
 
 bool Configuration::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  while ((tag = input->ReadTag()) != 0) {
+  // @@protoc_insertion_point(parse_start:Configuration)
+  for (;;) {
+    ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoff(127);
+    tag = p.first;
+    if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
       // repeated string whitelist_urls = 1;
       case 1: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+        if (tag == 10) {
          parse_whitelist_urls:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->add_whitelist_urls()));
-          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+          ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
             this->whitelist_urls(this->whitelist_urls_size() - 1).data(),
             this->whitelist_urls(this->whitelist_urls_size() - 1).length(),
-            ::google::protobuf::internal::WireFormat::PARSE);
+            ::google::protobuf::internal::WireFormat::PARSE,
+            "whitelist_urls");
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
         if (input->ExpectTag(10)) goto parse_whitelist_urls;
         if (input->ExpectTag(18)) goto parse_blacklist_urls;
@@ -597,17 +638,17 @@ bool Configuration::MergePartialFromCodedStream(
 
       // repeated string blacklist_urls = 2;
       case 2: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+        if (tag == 18) {
          parse_blacklist_urls:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->add_blacklist_urls()));
-          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+          ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
             this->blacklist_urls(this->blacklist_urls_size() - 1).data(),
             this->blacklist_urls(this->blacklist_urls_size() - 1).length(),
-            ::google::protobuf::internal::WireFormat::PARSE);
+            ::google::protobuf::internal::WireFormat::PARSE,
+            "blacklist_urls");
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
         if (input->ExpectTag(18)) goto parse_blacklist_urls;
         if (input->ExpectTag(26)) goto parse_wire_protocol;
@@ -616,13 +657,12 @@ bool Configuration::MergePartialFromCodedStream(
 
       // required .google.protobuf.FileDescriptorSet wire_protocol = 3;
       case 3: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+        if (tag == 26) {
          parse_wire_protocol:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
                input, mutable_wire_protocol()));
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
         if (input->ExpectTag(34)) goto parse_known_devices;
         break;
@@ -630,13 +670,12 @@ bool Configuration::MergePartialFromCodedStream(
 
       // repeated .DeviceDescriptor known_devices = 4;
       case 4: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+        if (tag == 34) {
          parse_known_devices:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
                 input, add_known_devices()));
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
         if (input->ExpectTag(34)) goto parse_known_devices;
         if (input->ExpectTag(40)) goto parse_valid_until;
@@ -645,25 +684,25 @@ bool Configuration::MergePartialFromCodedStream(
 
       // optional uint32 valid_until = 5;
       case 5: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+        if (tag == 40) {
          parse_valid_until:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
                  input, &valid_until_)));
           set_has_valid_until();
         } else {
-          goto handle_uninterpreted;
+          goto handle_unusual;
         }
-        if (input->ExpectAtEnd()) return true;
+        if (input->ExpectAtEnd()) goto success;
         break;
       }
 
       default: {
-      handle_uninterpreted:
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+      handle_unusual:
+        if (tag == 0 ||
+            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
-          return true;
+          goto success;
         }
         DO_(::google::protobuf::internal::WireFormat::SkipField(
               input, tag, mutable_unknown_fields()));
@@ -671,26 +710,34 @@ bool Configuration::MergePartialFromCodedStream(
       }
     }
   }
+success:
+  // @@protoc_insertion_point(parse_success:Configuration)
   return true;
+failure:
+  // @@protoc_insertion_point(parse_failure:Configuration)
+  return false;
 #undef DO_
 }
 
 void Configuration::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
+  // @@protoc_insertion_point(serialize_start:Configuration)
   // repeated string whitelist_urls = 1;
   for (int i = 0; i < this->whitelist_urls_size(); i++) {
-  ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+  ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
     this->whitelist_urls(i).data(), this->whitelist_urls(i).length(),
-    ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormat::SERIALIZE,
+    "whitelist_urls");
     ::google::protobuf::internal::WireFormatLite::WriteString(
       1, this->whitelist_urls(i), output);
   }
 
   // repeated string blacklist_urls = 2;
   for (int i = 0; i < this->blacklist_urls_size(); i++) {
-  ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+  ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
     this->blacklist_urls(i).data(), this->blacklist_urls(i).length(),
-    ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormat::SERIALIZE,
+    "blacklist_urls");
     ::google::protobuf::internal::WireFormatLite::WriteString(
       2, this->blacklist_urls(i), output);
   }
@@ -716,24 +763,28 @@ void Configuration::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
   }
+  // @@protoc_insertion_point(serialize_end:Configuration)
 }
 
 ::google::protobuf::uint8* Configuration::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
+  // @@protoc_insertion_point(serialize_to_array_start:Configuration)
   // repeated string whitelist_urls = 1;
   for (int i = 0; i < this->whitelist_urls_size(); i++) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->whitelist_urls(i).data(), this->whitelist_urls(i).length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "whitelist_urls");
     target = ::google::protobuf::internal::WireFormatLite::
       WriteStringToArray(1, this->whitelist_urls(i), target);
   }
 
   // repeated string blacklist_urls = 2;
   for (int i = 0; i < this->blacklist_urls_size(); i++) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->blacklist_urls(i).data(), this->blacklist_urls(i).length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "blacklist_urls");
     target = ::google::protobuf::internal::WireFormatLite::
       WriteStringToArray(2, this->blacklist_urls(i), target);
   }
@@ -761,6 +812,7 @@ void Configuration::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
   }
+  // @@protoc_insertion_point(serialize_to_array_end:Configuration)
   return target;
 }
 
