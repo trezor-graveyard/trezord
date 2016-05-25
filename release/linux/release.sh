@@ -20,7 +20,7 @@ strip ./usr/bin/trezord
 NAME=trezor-bridge
 
 rm -f *.deb *.rpm *.tar.bz2
-tar cfj $NAME-$VERSION.tar.bz2 ./etc ./usr ./lib
+tar cfj $NAME-$VERSION.tar.bz2 ./etc ./usr ./lib --exclude=./lib/jsoncpp
 
 for TYPE in "deb" "rpm"; do
 	case "$TARGET-$TYPE" in
