@@ -111,11 +111,6 @@ struct device
         if (!hid) {
             throw open_error("HID device open failed");
         }
-
-        unsigned char uart[] = {0x41, 0x01}; // enable UART
-        unsigned char txrx[] = {0x43, 0x03}; // purge TX/RX FIFOs
-        hid::send_feature_report(hid, uart, 2);
-        hid::send_feature_report(hid, txrx, 2);
     }
 
     ~device() { hid::close(hid); }
