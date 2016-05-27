@@ -69,6 +69,11 @@ enumerate_connected_devices(F filter)
             CLOG(DEBUG, "wire.enumerate") << "skipping, invalid device";
             continue;
         }
+        // skip debug interface
+        if (i->usage_page == 0xFF01) {
+            CLOG(DEBUG, "wire.enumerate") << "skipping, debug interface";
+            continue;
+        }
         // skip fido interface
         if (i->usage_page == 0xF1D0) {
             CLOG(DEBUG, "wire.enumerate") << "skipping, fido interface";
