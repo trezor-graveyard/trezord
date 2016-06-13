@@ -85,26 +85,10 @@ write(hid_device *device, unsigned char const *data, size_t length)
 }
 
 int
-read(hid_device *device, unsigned char *data, size_t length)
-{
-    return hid_executor->await([=] {
-            return hid_read(device, data, length);
-        });
-}
-
-int
 read_timeout(hid_device *device, unsigned char *data, size_t length, int milliseconds)
 {
     return hid_executor->await([=] {
             return hid_read_timeout(device, data, length, milliseconds);
-        });
-}
-
-int
-send_feature_report(hid_device *device, unsigned char const *data, size_t length)
-{
-    return hid_executor->await([=] {
-            return hid_send_feature_report(device, data, length);
         });
 }
 
