@@ -51,5 +51,5 @@ else
   makensis -X"OutFile $INSTALLER" -X'InstallDir "$PROGRAMFILES64\TREZOR Bridge"' trezord.nsis
 fi
 mv $INSTALLER $INSTALLER.unsigned
-osslsigncode sign -certs ../release/windows/authenticode.spc -key ../release/windows/authenticode.key -n "TREZOR Bridge" -i "https://mytrezor.com" -t http://timestamp.verisign.com/scripts/timstamp.dll -in $INSTALLER.unsigned -out $INSTALLER
-osslsigncode verify -in $INSTALLER
+osslsigncode sign -certs ../release/windows/authenticode.spc -key ../release/windows/authenticode.key -n "TREZOR Bridge" -i "https://mytrezor.com" -t http://timestamp.comodoca.com -in $INSTALLER.unsigned -out $INSTALLER
+# osslsigncode verify -in $INSTALLER
