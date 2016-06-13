@@ -205,10 +205,11 @@ private:
 
         report_type report;
         report.fill(0x00);
-        report[0] = report.size() - 1;
+        report[0] = 0x00;
+        report[1] = 0x3F;
 
-        size_type n = min(report.size() - 1, len);
-        copy(data, data + n, report.begin() + 1); // copy behind report number
+        size_type n = min(report.size() - 2, len);
+        copy(data, data + n, report.begin() + 2); // copy behind report number
 
         int r = hid::write(hid, report.data(), report.size());
 
@@ -223,7 +224,7 @@ private:
     }
 
     typedef std::vector<char_type> buffer_type;
-    typedef std::array<char_type, 64> report_type;
+    typedef std::array<char_type, 65> report_type;
 
     hid_device *hid;
     buffer_type read_buffer;
