@@ -238,7 +238,6 @@ private:
 
         size_type n = min(static_cast<size_type>(63), len);
         size_type report_size = 63 + hid_version;
-        int r = -1;
 
         switch (hid_version) {
             case 1:
