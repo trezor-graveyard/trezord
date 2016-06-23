@@ -116,9 +116,39 @@ struct device
         if (!hid) {
             throw open_error("HID device open failed");
         }
+        hid_version = try_hid_version();
+        if (hid_version <= 0) {
+            throw open_error("Unknown HID version");
+        }
     }
 
     ~device() { hid::close(hid); }
+
+    // try writing packet that will be discarded to figure out hid version
+    int try_hid_version() {
+        int r;
+        report_type report;
+
+        // try version 2
+        report.fill(0xFF);
+        report[0] = 0x00;
+        report[1] = 0x3F;
+        r = hid::write(hid, report.data(), 65);
+        if (r == 65) {
+            return 2;
+        }
+
+        // try version 1
+        report.fill(0xFF);
+        report[0] = 0x3F;
+        r = hid::write(hid, report.data(), 64);
+        if (r == 64) {
+            return 1;
+        }
+
+        // unknown version
+        return 0;
+    }
 
     void
     read_buffered(char_type *data,
@@ -205,13 +235,23 @@ private:
 
         report_type report;
         report.fill(0x00);
-        report[0] = 0x00;
-        report[1] = 0x3F;
 
-        size_type n = min(report.size() - 2, len);
-        copy(data, data + n, report.begin() + 2); // copy behind report number
+        size_type n = min(static_cast<size_type>(63), len);
+        int r = -1;
 
-        int r = hid::write(hid, report.data(), report.size());
+        switch (hid_version) {
+            case 1:
+                report[0] = 0x3F;
+                copy(data, data + n, report.begin() + 1);
+                r = hid::write(hid, report.data(), 64);
+                break;
+            case 2:
+                report[0] = 0x00;
+                report[1] = 0x3F;
+                copy(data, data + n, report.begin() + 2);
+                r = hid::write(hid, report.data(), 65);
+                break;
+        }
 
         if (r < 0) {
             throw write_error{"HID device write failed"};
@@ -228,6 +268,7 @@ private:
 
     hid_device *hid;
     buffer_type read_buffer;
+    int hid_version;
 };
 
 struct message
