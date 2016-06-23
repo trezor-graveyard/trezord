@@ -237,26 +237,26 @@ private:
         report.fill(0x00);
 
         size_type n = min(static_cast<size_type>(63), len);
+        size_type report_size = 63 + hid_version;
         int r = -1;
 
         switch (hid_version) {
             case 1:
                 report[0] = 0x3F;
                 copy(data, data + n, report.begin() + 1);
-                r = hid::write(hid, report.data(), 64);
                 break;
             case 2:
                 report[0] = 0x00;
                 report[1] = 0x3F;
                 copy(data, data + n, report.begin() + 2);
-                r = hid::write(hid, report.data(), 65);
                 break;
         }
 
+        int r = hid::write(hid, report.data(), report_size);
         if (r < 0) {
             throw write_error{"HID device write failed"};
         }
-        if (r < report.size()) {
+        if (r < report_size) {
             throw write_error{"HID device write was insufficient"};
         }
 
