@@ -28,3 +28,7 @@ RUN dnf install -y boost-static.i686 libusbx-devel.i686 protobuf-static.i686
 
 RUN dnf install -y libcurl-devel libmicrohttpd-devel
 RUN dnf install -y libcurl.i686 libcurl-devel.i686 libmicrohttpd.i686 libmicrohttpd-devel.i686
+
+# install package signing tools
+RUN dnf install -y rpm-sign perl-Data-Dumper
+RUN ln -s gpg2 /usr/bin/gpg

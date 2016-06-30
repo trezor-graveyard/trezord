@@ -4,6 +4,7 @@ set -e
 
 cd $(dirname $0)
 
+GPGSIGNKEY=86E6792FC27BFD478860C11091F3B339B9A02A3D
 TARGET=$1
 BUILDDIR=build${TARGET:+-$TARGET}
 VERSION=$(cat ../../VERSION)
@@ -16,6 +17,11 @@ install -D -m 0755 ../release/linux/trezord.init    ./etc/init.d/trezord
 install -D -m 0644 ../release/linux/trezord.service ./usr/lib/systemd/system/trezord.service
 
 strip ./usr/bin/trezord
+
+# prepare GPG signing environment
+export GPG_TTY=$(tty)
+export LC_ALL=en_US.UTF-8
+gpg --import ../release/linux/privkey.gpg
 
 NAME=trezor-bridge
 
@@ -58,6 +64,15 @@ for TYPE in "deb" "rpm"; do
 		--before-remove ../release/linux/fpm.before-remove.sh \
 		$DEPS \
 		$NAME-$VERSION.tar.bz2
+	case "$TYPE" in
+		deb)
+			../release/linux/dpkg-sig -k $GPGSIGNKEY --sign builder trezor-bridge_${VERSION}_${ARCH}.deb
+			;;
+		rpm)
+			rpm --addsign -D "%_gpg_name $GPGSIGNKEY" trezor-bridge-${VERSION}-1.${ARCH}.rpm
+			;;
+	esac
 done
+
 
 rm -rf ./etc ./usr ./lib
