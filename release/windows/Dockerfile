@@ -1,6 +1,6 @@
 # initialize from the image
 
-FROM fedora:23
+FROM fedora:24
 
 # update package repositories
 
@@ -21,5 +21,5 @@ RUN dnf install -y mingw32-zlib-static
 
 # install dependencies from COPR
 
-RUN wget https://copr-be.cloud.fedoraproject.org/results/prusnak/private/fedora-23-x86_64/00157154-mingw-protobuf/mingw32-protobuf{,-static}-2.6.1-3.fc23.noarch.rpm
-RUN dnf install -y mingw32-protobuf{,-static}-2.6.1-3.fc23.noarch.rpm
+RUN wget https://copr-be.cloud.fedoraproject.org/results/prusnak/private/fedora-24-x86_64/00365081-mingw-protobuf/mingw32-protobuf{,-static}-2.6.1-3.fc24.noarch.rpm
+RUN dnf install -y mingw32-protobuf{,-static}-2.6.1-3.fc24.noarch.rpm
