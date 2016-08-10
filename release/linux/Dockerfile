@@ -1,6 +1,6 @@
 # initialize from the image
 
-FROM fedora:24
+FROM fedora:23
 
 # update package repositories
 
