@@ -344,7 +344,7 @@ struct handler
             }
 
             kernel->json_to_wire(json_message, wire_in);
-            device->call(wire_in, wire_out);
+            kernel->call_device(device, wire_in, wire_out);
             kernel->wire_to_json(wire_out, json_message);
 
             return json_response(200, json_message);

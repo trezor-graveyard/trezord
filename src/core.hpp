@@ -382,6 +382,13 @@ public:
         release_session(session_id);
     }
 
+    void
+    call_device(device_kernel *device, wire::message const &msg_in, wire::message &msg_out)
+    {
+        lock_type lock{mutex};
+        device->call(msg_in, msg_out);
+    }
+
     // protobuf <-> json codec
 
     void
