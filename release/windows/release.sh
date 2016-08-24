@@ -23,11 +23,11 @@ for i in \
 	libgmp-10.dll \
 	libgnutls-30.dll \
 	libgpg-error-0.dll \
-	libhogweed-4-1.dll \
+	libhogweed-4-2.dll \
 	libidn-11.dll \
 	libintl-8.dll \
-	libmicrohttpd-10.dll \
-	libnettle-6-1.dll \
+	libmicrohttpd-12.dll \
+	libnettle-6-2.dll \
 	libp11-kit-0.dll \
 	libssh2-1.dll \
 	libssl-10.dll \
