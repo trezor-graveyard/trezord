@@ -20,6 +20,9 @@ DirText "Please select the installation folder."
 Section "TREZOR Bridge"
   SectionIn RO
 
+  DetailPrint "Stopping previous TREZOR Bridge"
+  nsExec::Exec "taskkill /IM trezord.exe /F"
+
   SetOutPath "$INSTDIR"
   File "iconv.dll"
   File "libcrypto-10.dll"
