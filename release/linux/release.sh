@@ -21,7 +21,7 @@ strip ./usr/bin/trezord
 # prepare GPG signing environment
 export GPG_TTY=$(tty)
 export LC_ALL=en_US.UTF-8
-gpg --import ../release/linux/privkey.gpg
+gpg --import ../release/linux/privkey.asc
 
 NAME=trezor-bridge
 

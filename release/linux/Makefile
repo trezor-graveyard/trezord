@@ -30,3 +30,6 @@ clean:
 
 shell: .docker-image
 	docker run -i -t $(VOL_MOUNT) $(IMAGETAG) /bin/bash
+
+privkey:
+	gpg --armor --export-secret-key > privkey.asc
