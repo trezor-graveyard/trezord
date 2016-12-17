@@ -22,8 +22,8 @@ Server supports following API calls:
 
 | url <br> method | parameters | result type | description |
 |-------------|------------|-------------|-------------|
-| `/` <br> GET | | {`version`:&nbsp;string,<br> `configured`:&nbsp;boolean,<br> `validUntil`:&nbsp;timestamp} | Returns current version of bridge and info about configuration.<br>See `/config` for more info. |
-| `/config` <br> POST | request body: config, as hex string | {} | Before any advanced call, configuration file needs to be loaded to bridge.<br> Configuration file is signed by SatoshiLabs and the validity of the signature is limited.<br>Current config should be [in this repo](https://github.com/trezor/webwallet-data/blob/master/config_signed.bin), or [on AWS here](http://mytrezor.s3.amazonaws.com/config_signed.bin). |
+| `/` <br> GET | | {`version`:&nbsp;string,<br> `configured`:&nbsp;boolean,<br> `validUntil`:&nbsp;timestamp} | Returns current version of bridge and info about configuration.<br>See `/configure` for more info. |
+| `/configure` <br> POST | request body: config, as hex string | {} | Before any advanced call, configuration file needs to be loaded to bridge.<br> Configuration file is signed by SatoshiLabs and the validity of the signature is limited.<br>Current config should be [in this repo](https://github.com/trezor/webwallet-data/blob/master/config_signed.bin), or [on AWS here](http://mytrezor.s3.amazonaws.com/config_signed.bin). |
 | `/enumerate` <br> GET | | Array&lt;{`path`:&nbsp;string, <br>`session`:&nbsp;string&nbsp;&#124;&nbsp;null}&gt; | Lists devices.<br>`path` uniquely defines device between more connected devices. It might or might not be unique over time; on some platform it changes, on others given USB port always returns the same path.<br>If `session` is null, nobody else is using the device; if it's string, it identifies who is using it. |
 | `/listen` <br> POST | request body: previous, as JSON | like `enumerate` | Listen to changes and returns either on change or after 30 second timeout. Compares change from `previous` that is sent as a parameter. "Change" is both connecting/disconnecting and session change. |
 | `/acquire/PATH/PREVIOUS` <br> POST | `PATH`: path of device<br>`PREVNOUS`: previous session (or string "null") | {`session`:&nbsp;string} | Acquires the device at `PATH`. By "acquiring" the device, you are claiming the device for yourself.<br>Before acquiring, checks that the current session is `PREVIOUS`.<br>If two applications call `acquire` on a newly connected device at the same time, only one of them succeed. |
@@ -32,7 +32,7 @@ Server supports following API calls:
 
 ### Whitelisting
 
-You cannot connect to `trezord` from anywhere on the internet. Your URL needs to be specifically whitelisted; whitelist is in the signed config file, that is sent during `config/` call.
+You cannot connect to `trezord` from anywhere on the internet. Your URL needs to be specifically whitelisted; whitelist is in the signed config file, that is sent during `configure/` call.
 
 `localhost` is specifically whitelisted, so you can experiment on `http://localhost`. If you want to add your url in order to make a TREZOR web app, [make a pull request to this file](https://github.com/trezor/trezor-common/blob/master/signer/config.json).
 
