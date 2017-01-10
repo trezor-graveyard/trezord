@@ -8,7 +8,7 @@ url=https://127.0.0.1:21324
 device_index=${1-0}
 
 if [ \! -f config.bin ]; then
-  curl https://mytrezor.com/data/plugin/config_signed.bin | xxd -p -r > config.bin
+  curl https://wallet.trezor.io/data/config_signed.bin | xxd -p -r > config.bin
 fi
 
 curl -k $url/

@@ -6,7 +6,7 @@ TREZOR Communication Daemon aka TREZOR Bridge
 
 ## What trezord does
 
-`trezord` (short for TREZOR Daemon), or TREZOR Bridge, is a small piece of software, used for websites (such as our own webwallet [myTREZOR](https://mytrezor.com)), to talk with TREZOR devices.
+`trezord` (short for TREZOR Daemon), or TREZOR Bridge, is a small piece of software, used for websites (such as our own [TREZOR Wallet](https://wallet.trezor.io)), to talk with TREZOR devices.
 
 `trezord` starts a local webserver, with which both external applications and local applications can communicate. This webserver then communicates with TREZOR devices and returns their replies as JSON. `trezord` also manages access to devices - two applications cannot use the same device at the same time.
 
@@ -23,7 +23,7 @@ Server supports following API calls:
 | url <br> method | parameters | result type | description |
 |-------------|------------|-------------|-------------|
 | `/` <br> GET | | {`version`:&nbsp;string,<br> `configured`:&nbsp;boolean,<br> `validUntil`:&nbsp;timestamp} | Returns current version of bridge and info about configuration.<br>See `/configure` for more info. |
-| `/configure` <br> POST | request body: config, as hex string | {} | Before any advanced call, configuration file needs to be loaded to bridge.<br> Configuration file is signed by SatoshiLabs and the validity of the signature is limited.<br>Current config should be [in this repo](https://github.com/trezor/webwallet-data/blob/master/config_signed.bin), or [on AWS here](http://mytrezor.s3.amazonaws.com/config_signed.bin). |
+| `/configure` <br> POST | request body: config, as hex string | {} | Before any advanced call, configuration file needs to be loaded to bridge.<br> Configuration file is signed by SatoshiLabs and the validity of the signature is limited.<br>Current config should be [in this repo](https://github.com/trezor/webwallet-data/blob/master/config_signed.bin), or [on AWS here](https://wallet.trezor.io/data/config_signed.bin). |
 | `/enumerate` <br> GET | | Array&lt;{`path`:&nbsp;string, <br>`session`:&nbsp;string&nbsp;&#124;&nbsp;null}&gt; | Lists devices.<br>`path` uniquely defines device between more connected devices. It might or might not be unique over time; on some platform it changes, on others given USB port always returns the same path.<br>If `session` is null, nobody else is using the device; if it's string, it identifies who is using it. |
 | `/listen` <br> POST | request body: previous, as JSON | like `enumerate` | Listen to changes and returns either on change or after 30 second timeout. Compares change from `previous` that is sent as a parameter. "Change" is both connecting/disconnecting and session change. |
 | `/acquire/PATH/PREVIOUS` <br> POST | `PATH`: path of device<br>`PREVNOUS`: previous session (or string "null") | {`session`:&nbsp;string} | Acquires the device at `PATH`. By "acquiring" the device, you are claiming the device for yourself.<br>Before acquiring, checks that the current session is `PREVIOUS`.<br>If two applications call `acquire` on a newly connected device at the same time, only one of them succeed. |
@@ -38,7 +38,7 @@ You cannot connect to `trezord` from anywhere on the internet. Your URL needs to
 
 ## Download latest binary
 
-Latest build packages are on https://wallet.mytrezor.com/data/bridge/1.2.0/index.html
+Latest build packages are on https://wallet.trezor.io/data/bridge/1.2.0/index.html
 
 ## Checking out sources
 
