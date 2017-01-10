@@ -46,7 +46,7 @@ done
 mingw-strip *.dll *.exe
 
 mv trezord.exe trezord.exe.unsigned
-osslsigncode sign -certs ../release/windows/authenticode.p7b -key ../release/windows/authenticode.der -n "TREZOR Bridge" -i "https://mytrezor.com" -t http://timestamp.comodoca.com -in trezord.exe.unsigned -out trezord.exe
+osslsigncode sign -certs ../release/windows/authenticode.p7b -key ../release/windows/authenticode.der -n "TREZOR Bridge" -i "https://trezor.io/" -t http://timestamp.comodoca.com -in trezord.exe.unsigned -out trezord.exe
 
 if [ $TARGET = win32 ]; then
   makensis -X"OutFile $INSTALLER" -X'InstallDir "$PROGRAMFILES32\TREZOR Bridge"' trezord.nsis

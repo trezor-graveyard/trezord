@@ -57,7 +57,7 @@ for TYPE in "deb" "rpm"; do
 		--vendor "SatoshiLabs" \
 		--description "Communication daemon for TREZOR" \
 		--maintainer "SatoshiLabs <stick@satoshilabs.com>" \
-		--url "http://bitcointrezor.com/" \
+		--url "https://trezor.io/" \
 		--category "Productivity/Security" \
 		--before-install ../release/linux/fpm.before-install.sh \
 		--after-install ../release/linux/fpm.after-install.sh \
