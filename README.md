@@ -38,7 +38,7 @@ You cannot connect to `trezord` from anywhere on the internet. Your URL needs to
 
 ## Download latest binary
 
-Latest build packages are on https://wallet.trezor.io/data/bridge/1.2.0/index.html
+Latest build packages are on https://wallet.trezor.io/data/bridge/latest/index.html
 
 ## Checking out sources
 

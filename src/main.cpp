@@ -45,8 +45,8 @@ _INITIALIZE_EASYLOGGINGPP
 static const auto server_port = 21324;
 static const auto server_address = "127.0.0.1";
 
-static const auto https_cert_uri = "https://wallet.trezor.io/data/bridge/cert/server.crt";
-static const auto https_privkey_uri = "https://wallet.trezor.io/data/bridge/cert/server.key";
+static const auto https_cert_uri = "https://wallet.trezor.io/data/bridge/cert/localback.crt";
+static const auto https_privkey_uri = "https://wallet.trezor.io/data/bridge/cert/localback.key";
 
 static const auto sleep_time = boost::chrono::seconds(10);
 
@@ -102,8 +102,8 @@ configure_logging()
 }
 
 void
-start_server(std::string const &cert_uri,
-             std::string const &privkey_uri,
+start_server(std::string const &cert_data,
+             std::string const &privkey_data,
              std::string const &address,
              unsigned int port)
 {
@@ -112,9 +112,6 @@ start_server(std::string const &cert_uri,
     using std::bind;
     using std::placeholders::_1;
     using http_api::handler;
-
-    auto cert = http_client::request_uri_to_string(cert_uri);
-    auto privkey = http_client::request_uri_to_string(privkey_uri);
 
     http_api::handler api_handler{
         std::unique_ptr<core::kernel>{new core::kernel}};
@@ -134,7 +131,7 @@ start_server(std::string const &cert_uri,
             return api_handler.is_origin_allowed(origin);
         }};
 
-    server.start(port, address.c_str(), privkey.c_str(), cert.c_str());
+    server.start(port, address.c_str(), privkey_data.c_str(), cert_data.c_str());
     for (;;) {
         boost::this_thread::sleep_for(sleep_time);
     }
@@ -175,19 +172,40 @@ main(int argc, char *argv[])
     }
 #endif
 
-start:
+    std::string cert_data;
+    std::string privkey_data;
+
+start_fetch:
     try {
-        start_server(https_cert_uri,
-                     https_privkey_uri,
-                     server_address,
-                     server_port);
+        using namespace trezord;
+        cert_data = http_client::request_uri_to_string(https_cert_uri);
+        privkey_data = http_client::request_uri_to_string(https_privkey_uri);
     }
     catch (std::exception const &e) {
         LOG(ERROR) << e.what();
         LOG(INFO) << "sleeping for " << sleep_time.count() << "s";
         boost::this_thread::sleep_for(sleep_time);
-        goto start;
+        goto start_fetch;
     }
 
-    return 0;
+    int retry_count = 0;
+start_serve:
+    try {
+        start_server(cert_data,
+                     privkey_data,
+                     server_address,
+                     server_port);
+    }
+    catch (std::exception const &e) {
+        LOG(ERROR) << e.what();
+        if (++retry_count <= 10) {
+            LOG(INFO) << "sleeping for " << sleep_time.count() << "s";
+            boost::this_thread::sleep_for(sleep_time);
+            goto start_serve;
+        } else {
+            LOG(INFO) << "retrying failed 10 times in a row, aborting";
+        }
+    }
+
+    return 1;
 }
