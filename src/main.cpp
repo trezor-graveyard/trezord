@@ -188,7 +188,6 @@ start_fetch:
         goto start_fetch;
     }
 
-    int retry_count = 0;
 start_serve:
     try {
         start_server(cert_data,
@@ -198,13 +197,9 @@ start_serve:
     }
     catch (std::exception const &e) {
         LOG(ERROR) << e.what();
-        if (++retry_count <= 10) {
-            LOG(INFO) << "sleeping for " << sleep_time.count() << "s";
-            boost::this_thread::sleep_for(sleep_time);
-            goto start_serve;
-        } else {
-            LOG(INFO) << "retrying failed 10 times in a row, aborting";
-        }
+        LOG(INFO) << "sleeping for " << sleep_time.count() << "s";
+        boost::this_thread::sleep_for(sleep_time);
+        goto start_serve;
     }
 
     return 1;
