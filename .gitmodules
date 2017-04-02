@@ -1,6 +1,6 @@
 [submodule "vendor/jsoncpp"]
 	path = vendor/jsoncpp
-	url = https://github.com/codebudo/jsoncpp.git
+	url = https://github.com/open-source-parsers/jsoncpp.git
 [submodule "vendor/trezor-crypto"]
 	path = vendor/trezor-crypto
 	url = https://github.com/trezor/trezor-crypto.git

@@ -20,7 +20,7 @@ esac
 # Compile jsoncpp
 if [ \! -f $BUILDDIR/lib/jsoncpp/lib/libjson.a ]; then
   mkdir -p $BUILDDIR/lib/jsoncpp && cd $BUILDDIR/lib/jsoncpp
-  cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE $PLATFORM_FILE ../../../vendor/jsoncpp
+  cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE -DJSONCPP_WITH_TESTS=OFF $PLATFORM_FILE ../../../vendor/jsoncpp
   make $JOBS
   cd ../../..
 fi
