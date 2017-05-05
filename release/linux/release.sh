@@ -26,7 +26,7 @@ gpg --import ../release/linux/privkey.asc
 NAME=trezor-bridge
 
 rm -f *.deb *.rpm *.tar.bz2
-tar cfj $NAME-$VERSION.tar.bz2 ./etc ./usr ./lib --exclude=./lib/jsoncpp
+tar -cjf $NAME-$VERSION.tar.bz2 --exclude=./lib/jsoncpp ./etc ./usr ./lib
 
 for TYPE in "deb" "rpm"; do
 	case "$TARGET-$TYPE" in

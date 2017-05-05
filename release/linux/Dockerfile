@@ -1,6 +1,6 @@
 # initialize from the image
 
-FROM fedora:23
+FROM fedora:25
 
 # update package repositories
 
@@ -30,5 +30,5 @@ RUN dnf install -y libcurl-devel libmicrohttpd-devel
 RUN dnf install -y libcurl.i686 libcurl-devel.i686 libmicrohttpd.i686 libmicrohttpd-devel.i686
 
 # install package signing tools
-RUN dnf install -y rpm-sign perl-Data-Dumper
+RUN dnf install -y rpm-sign
 RUN ln -s gpg2 /usr/bin/gpg
