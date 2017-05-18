@@ -50,13 +50,6 @@ git submodule update --init
 
 ## Building
 
-Run `build.sh` to build locally.
+Change into `release/linux` or `release/windows` directory and run: `make`.
 
-... or change into `release` directory and run one of the following (requires Docker):
-
-* `make lin32`
-* `make lin64`
-* `make win32`
-* `make win64`
-
-You can also run `make shell` in `release` directory to log into Docker build environment.
+Or run `build.sh` to build locally using local dependencies.
