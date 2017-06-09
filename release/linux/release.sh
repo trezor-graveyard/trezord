@@ -19,9 +19,13 @@ install -D -m 0644 ../release/linux/trezord.service ./usr/lib/systemd/system/tre
 strip ./usr/bin/trezord
 
 # prepare GPG signing environment
-export GPG_TTY=$(tty)
-export LC_ALL=en_US.UTF-8
-gpg --import ../release/linux/privkey.asc
+GPG_PRIVKEY=../release/linux/privkey.asc
+if [ -r $GPG_PRIVKEY ]; then
+    export GPG_TTY=$(tty)
+    export LC_ALL=en_US.UTF-8
+    gpg --import ../release/linux/privkey.asc
+    GPG_SIGN=gpg
+fi
 
 NAME=trezor-bridge
 
@@ -64,11 +68,11 @@ for TYPE in "deb" "rpm"; do
 		--before-remove ../release/linux/fpm.before-remove.sh \
 		$DEPS \
 		$NAME-$VERSION.tar.bz2
-	case "$TYPE" in
-		deb)
+	case "$TYPE-$GPG_SIGN" in
+		deb-gpg)
 			../release/linux/dpkg-sig -k $GPGSIGNKEY --sign builder trezor-bridge_${VERSION}_${ARCH}.deb
 			;;
-		rpm)
+		rpm-gpg)
 			rpm --addsign -D "%_gpg_name $GPGSIGNKEY" trezor-bridge-${VERSION}-1.${ARCH}.rpm
 			;;
 	esac

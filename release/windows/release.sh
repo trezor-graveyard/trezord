@@ -45,14 +45,22 @@ done
 
 mingw-strip *.dll *.exe
 
-mv trezord.exe trezord.exe.unsigned
-osslsigncode sign -certs ../release/windows/authenticode.p7b -key ../release/windows/authenticode.der -n "TREZOR Bridge" -i "https://trezor.io/" -t http://timestamp.comodoca.com -in trezord.exe.unsigned -out trezord.exe
+SIGNKEY=../release/windows/authenticode
+
+if [ -r $SIGNKEY.der ]; then
+    mv trezord.exe trezord.exe.unsigned
+    osslsigncode sign -certs $SIGNKEY.p7b -key $SIGNKEY.der -n "TREZOR Bridge" -i "https://trezor.io/" -t http://timestamp.comodoca.com -in trezord.exe.unsigned -out trezord.exe
+    osslsigncode verify -in trezord.exe
+fi
 
 if [ $TARGET = win32 ]; then
-  makensis -X"OutFile $INSTALLER" -X'InstallDir "$PROGRAMFILES32\TREZOR Bridge"' trezord.nsis
+    makensis -X"OutFile $INSTALLER" -X'InstallDir "$PROGRAMFILES32\TREZOR Bridge"' trezord.nsis
 else
-  makensis -X"OutFile $INSTALLER" -X'InstallDir "$PROGRAMFILES64\TREZOR Bridge"' trezord.nsis
+    makensis -X"OutFile $INSTALLER" -X'InstallDir "$PROGRAMFILES64\TREZOR Bridge"' trezord.nsis
 fi
-mv $INSTALLER $INSTALLER.unsigned
-osslsigncode sign -certs ../release/windows/authenticode.p7b -key ../release/windows/authenticode.der -n "TREZOR Bridge" -i "https://trezor.io/" -t http://timestamp.comodoca.com -in $INSTALLER.unsigned -out $INSTALLER
-# osslsigncode verify -in $INSTALLER
+
+if [ -r $SIGNKEY.der ]; then
+    mv $INSTALLER $INSTALLER.unsigned
+    osslsigncode sign -certs $SIGNKEY.p7b -key $SIGNKEY.der -n "TREZOR Bridge" -i "https://trezor.io/" -t http://timestamp.comodoca.com -in $INSTALLER.unsigned -out $INSTALLER
+    osslsigncode verify -in $INSTALLER
+fi
