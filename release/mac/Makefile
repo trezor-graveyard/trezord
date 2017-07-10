@@ -4,7 +4,7 @@ TARGET    = mac$(BITS)
 VOL_MOUNT = -v $(shell pwd)/../..:/trezord-src
 IMAGETAG  = trezord-build-env-$(PLATFORM)
 SDK_FILE  = MacOSX10.8.sdk.tar.xz
-SDK_URL   = https://www.dropbox.com/s/n1qniv9neslg6d0/MacOSX10.8.sdk.tar.xz
+SDK_URL   = https://github.com/phracker/MacOSX-SDKs/releases/download/MacOSX10.11.sdk/MacOSX10.8.sdk.tar.xz
 
 all: .package
 
@@ -22,7 +22,7 @@ all: .package
 
 $(SDK_FILE):
 	$(info Downloading OS X SDK ...)
-	wget -O $(SDK_FILE) $(SDK_URL)
+	curl -o $(SDK_FILE) -L $(SDK_URL)
 
 shell: .docker-image
 	docker run -i -t $(VOL_MOUNT) $(IMAGETAG) /bin/bash
