@@ -54,4 +54,14 @@ Change into `release/linux` or `release/windows` directory and run: `make`.
 
 Or run `build.sh` to build locally using local dependencies.
 
-In the latter case, here is a rough list of Debian package build dependencies: build-essential cmake curl libcurl4-gnutls-dev libprotobuf-dev pkg-config libusb-1.0-0 libusb-1.0-0-dev libmicrohttpd-dev libboost-all-dev protobuf-compiler
+In the latter case, here is a rough list of Debian package build dependencies:
+
+`build-essential cmake curl libcurl4-gnutls-dev libprotobuf-dev pkg-config libusb-1.0-0 libusb-1.0-0-dev libmicrohttpd-dev libboost-all-dev protobuf-compiler`
+
+Also you might need to regenerate protobuf files if you are using protobuf-3.x:
+
+```
+cd src/config
+wget https://raw.githubusercontent.com/trezor/trezor-common/master/protob/config.proto
+protoc -I/usr/include -I. --cpp_out=. config.proto
+```
