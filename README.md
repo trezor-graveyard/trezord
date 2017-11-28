@@ -58,6 +58,10 @@ In the latter case, here is a rough list of Debian package build dependencies:
 
 `build-essential cmake curl libcurl4-gnutls-dev libprotobuf-dev pkg-config libusb-1.0-0 libusb-1.0-0-dev libmicrohttpd-dev libboost-all-dev protobuf-compiler`
 
+or Fedora (as of 26) build dependencies:
+
+`boost-devel-static protobuf-compiler cmake gcc-c++ libcurl-devel protobuf-devel libusbx-devel libmicrohttpd-devel protobuf-static`
+
 Also you might need to regenerate protobuf files if you are using protobuf-3.x:
 
 ```
