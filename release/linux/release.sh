@@ -36,11 +36,11 @@ for TYPE in "deb" "rpm"; do
 	case "$TARGET-$TYPE" in
 		lin32-deb)
 			ARCH=i386
-			DEPS="-d libcurl4 -d libmicrohttpd12 -d libusb-1.0-0"
+			DEPS="-d libcurl3 -d libmicrohttpd12 -d libusb-1.0-0"
 			;;
 		lin64-deb)
 			ARCH=amd64
-			DEPS="-d libcurl4 -d libmicrohttpd12 -d libusb-1.0-0"
+			DEPS="-d libcurl3 -d libmicrohttpd12 -d libusb-1.0-0"
 			;;
 		lin32-rpm)
 			ARCH=i386
