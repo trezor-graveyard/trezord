@@ -65,7 +65,7 @@ enumerate_connected_devices(F filter)
             continue;
         }
         // skip foreign interfaces
-        if (i->interface_number > 0) {
+        if (!(i->interface_number == 0 || i->interface_number == 2)) {
             CLOG(DEBUG, "wire.enumerate") << "skipping, invalid device";
             continue;
         }
