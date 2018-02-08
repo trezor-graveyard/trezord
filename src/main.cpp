@@ -163,7 +163,7 @@ main(int argc, char *argv[])
         return 1;
     }
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__FreeBSD__)
     if (!vm.count("foreground")) {
         if (daemon(0, 0) < 0) {
             LOG(ERROR) << "could not daemonize";
