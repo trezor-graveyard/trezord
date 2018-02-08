@@ -4,6 +4,8 @@
 
 TREZOR Communication Daemon aka TREZOR Bridge
 
+**DO NOT USE! This version has been obsoleted by a new generation of TREZOR Bridge available from here: [trezor/trezord-go](https://github.com/trezor/trezord-go)**
+
 ## What trezord does
 
 `trezord` (short for TREZOR Daemon), or TREZOR Bridge, is a small piece of software, used for websites (such as our own [TREZOR Wallet](https://wallet.trezor.io)), to talk with TREZOR devices.
